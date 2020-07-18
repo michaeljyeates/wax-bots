@@ -4,8 +4,8 @@ const Int64 = require('int64-buffer').Int64BE;
 const fetch = require('node-fetch');
 
 const telegram_api_key = require('./secret').telegram_api_key;
-// const telegram_channel = 'packrips';
-const telegram_channel = 'gqjfgtyu';
+const telegram_channel = 'packrips';
+// const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
 const pack_images = {
@@ -134,7 +134,8 @@ class DeltaHandler {
         const balance = await this.api.rpc.get_currency_balance(lookup[obj.boxtype].code, lookup[obj.boxtype].account, lookup[obj.boxtype].symbol);
         const [sold] = balance[0].split(' ');
         const [max] = stats[lookup[obj.boxtype].symbol].max_supply.split(' ');
-        str += `\n\n------------------------------\n${sold} / ${max} ${lookup[obj.boxtype].symbol} packs opened`
+        const percentage = ((sold / max) * 100).toFixed(1);
+        str += `\n\n------------------------------\n${sold} / ${max} \\(${percentage}%\\) ${lookup[obj.boxtype].symbol} packs opened`
 
         return str;
     }
@@ -309,7 +310,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 67187604;
+    const start_block = 67336561;
 
     start(start_block);
 }
