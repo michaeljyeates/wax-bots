@@ -2,11 +2,10 @@ const StateReceiver = require('@eosdacio/eosio-statereceiver');
 const {Api, JsonRpc, Serialize} = require('eosjs');
 const Int64 = require('int64-buffer').Int64BE;
 const fetch = require('node-fetch');
-const card_names = require('./card_names');
 
 const telegram_api_key = require('./secret').telegram_api_key;
-const telegram_channel = 'packrips';
-// const telegram_channel = 'gqjfgtyu';
+// const telegram_channel = 'packrips';
+const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
 const pack_images = {
@@ -87,7 +86,7 @@ class DeltaHandler {
         return index.charAt(0).toUpperCase() + index.substr(1).toLowerCase();
     }
 
-    getString(obj) {
+    async getString(obj) {
         // console.log(`getString`, obj);
         const variant_indexed = {};
         let str = '';
@@ -107,6 +106,35 @@ class DeltaHandler {
         for (let vi in variant_indexed){
             str += `\n\n**${this.getVariantName(vi)}**\n\n` + variant_indexed[vi].join(`\n`);
         }
+
+        // Add message with packs opened
+        const lookup = {
+            five: {
+                code: 'packs.topps',
+                account: 'gpk.topps',
+                symbol: 'GPKFIVE'
+            },
+            thirty: {
+                code: 'packs.topps',
+                account: 'gpk.topps',
+                symbol: 'GPKMEGA'
+            },
+            exotic5: {
+                code: 'packs.topps',
+                account: 'gpk.topps',
+                symbol: 'EXOFIVE'
+            },
+            exotic25: {
+                code: 'packs.topps',
+                account: 'gpk.topps',
+                symbol: 'EXOMEGA'
+            },
+        };
+        const stats = await this.api.rpc.get_currency_stats(lookup[obj.boxtype].code, lookup[obj.boxtype].symbol);
+        const balance = await this.api.rpc.get_currency_balance(lookup[obj.boxtype].code, lookup[obj.boxtype].account, lookup[obj.boxtype].symbol);
+        const [sold] = balance[0].split(' ');
+        const [max] = stats[lookup[obj.boxtype].symbol].max_supply.split(' ');
+        str += `\n\n------------------------------\n${sold} / ${max} ${lookup[obj.boxtype].symbol} packs opened`
 
         return str;
     }
@@ -257,7 +285,7 @@ class DeltaHandler {
                 unboxings[ubid].cards = unboxings[ubid].cards.sort((a, b) => {
                     return (a.cardid < b.cardid)?-1:1;
                 });
-                const msg = this.getString(unboxings[ubid]);
+                const msg = await this.getString(unboxings[ubid]);
                 this.sendMessage(msg);
             }
         }
