@@ -6,7 +6,15 @@ const card_names = require('./card_names');
 
 const telegram_api_key = require('./secret').telegram_api_key;
 const telegram_channel = 'packrips';
+// const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
+
+const pack_images = {
+    five: 'https://cloudflare-ipfs.com/ipfs/QmSRti2HK95NXWYG3t3he7UK7hkgw8w9TdqPc6hi5euV1p/packs/standard.jpg',
+    thirty: 'https://cloudflare-ipfs.com/ipfs/QmSRti2HK95NXWYG3t3he7UK7hkgw8w9TdqPc6hi5euV1p/packs/mega.jpg',
+    exotic5: 'https://cloudflare-ipfs.com/ipfs/QmZBXd6CWeSYc6ZxDcRPC54dwZv4NeSBoRahY8bYDdYPui',
+    exotic25: 'https://cloudflare-ipfs.com/ipfs/QmNjTxU8DBN7us9cUt5y9Uju5b7KEQa4Uwj7FhsuAZ79HQ',
+}
 
 class DeltaHandler {
     constructor({config}) {
@@ -27,7 +35,7 @@ class DeltaHandler {
         const url = `https://api.telegram.org/bot${telegram_api_key}/sendMessage`;
         const msg_obj = {
             chat_id: `@${telegram_channel}`,
-            text: msg.replace(/\./g, '\\.').replace(/\-/g, '\\-'),
+            text: msg.replace(/\./g, '\\.').replace(/\-/g, '\\-'), //.replace(/\(/g, '\\(').replace(/\)/g, '\\)'),
             parse_mode: 'MarkdownV2'
         }
         // console.log(JSON.stringify(msg_obj));
@@ -68,12 +76,38 @@ class DeltaHandler {
         return contract.types.get(type)
     }
 
+    getVariantName(index) {
+        switch (index){
+            case 'tigerborder':
+                return 'Tiger Border';
+            case 'tigerscratch':
+                return 'Tiger Scratch';
+        }
+
+        return index.charAt(0).toUpperCase() + index.substr(1).toLowerCase();
+    }
+
     getString(obj) {
         // console.log(`getString`, obj);
-        let str = `${obj.account} opened an ${obj.boxtype} containing:\n\n`;
+        const variant_indexed = {};
+        let str = '';
+        let pack_name = obj.boxtype;
+        if (typeof pack_images[obj.boxtype] === 'string'){
+            pack_name = `[${obj.boxtype}](${pack_images[obj.boxtype]})`;
+        }
+        str += `${obj.account} opened an ${pack_name} containing:`;
         obj.cards.forEach((c) => {
-            str += `- ${c.cardid}${c.quality} ${c.variant} ${this.getCardName(obj.boxtype, c)}\n`;
+            if (typeof variant_indexed[c.variant] === 'undefined'){
+                variant_indexed[c.variant] = [];
+            }
+            let prefix = '-';
+            variant_indexed[c.variant].push(`${prefix} ${c.cardid}${c.quality} ${c.name} [${c.id}](https://gpk.market/asset/${c.id}?referral=eosdacserver)`);
         });
+
+        for (let vi in variant_indexed){
+            str += `\n\n**${this.getVariantName(vi)}**\n\n` + variant_indexed[vi].join(`\n`);
+        }
+
         return str;
     }
 
@@ -85,34 +119,9 @@ class DeltaHandler {
         }
     }
 
-    getCardName(series, card_data) {
-        let series_key = '';
-        switch (series){
-            case 'exotic5':
-            case 'exotic25':
-                series_key = 'exotic';
-                break;
-            case 'five':
-            case 'thirty':
-                series_key = 'gpks1';
-                break;
-        }
-
-        if (series_key){
-            // console.log(`Checking for ${series_key} ${card_data.cardid}${card_data.quality}`);
-            let card_name = card_names[series_key][`${card_data.cardid}${card_data.quality}`]
-            if (typeof card_name === 'undefined'){
-                card_name = `Missing card in series ${series_key}`;
-            }
-            return card_name
-        }
-
-        return `Unknown card in series ${series}`;
-    }
-
     async processDelta(block_num, deltas, abi, block_timestamp) {
         let have_unboxing = false;
-        const unboxings = {};
+        const unboxings = {}, sassets = {};
 
         for (const delta of deltas) {
             // this.logger.info(delta)
@@ -174,6 +183,39 @@ class DeltaHandler {
                                         }
                                     }
                                 }
+                                else if (code === 'simpleassets') {
+                                    const scope = sb.getName();
+                                    const table = sb.getName();
+                                    const primary_key = new Int64(sb.getUint8Array(8)).toString();
+                                    const payer = sb.getName();
+                                    const data_raw = sb.getBytes();
+
+                                    // console.log(scope);
+                                    // console.log(table);
+
+                                    if (table === 'sassets' && row.present) {
+                                        // console.log(`Found unbox for ${scope}`);
+
+                                        const table_type = await this.getTableType(code, table);
+                                        const data_sb = new Serialize.SerialBuffer({
+                                            textEncoder: new TextEncoder,
+                                            textDecoder: new TextDecoder,
+                                            array: data_raw
+                                        });
+
+                                        const data = table_type.deserialize(data_sb);
+
+                                        if (data.author === 'gpk.topps'){
+                                            if (typeof sassets[data.owner] === 'undefined'){
+                                                sassets[data.owner] = [];
+                                            }
+                                            const card_data = JSON.parse(data.mdata);
+                                            card_data.id = data.id;
+                                            sassets[data.owner].push(card_data);
+                                        }
+
+                                    }
+                                }
                             } catch (e) {
                                 console.error(`Error processing row.data for ${block_num} : ${e.message}`, e);
                             }
@@ -185,7 +227,36 @@ class DeltaHandler {
 
         if (have_unboxing){
             // console.log(`Processed unboxing`, unboxings);
+            // merge the simple assets data
             for (let ubid in unboxings){
+                if (typeof sassets[unboxings[ubid].account] !== 'undefined'){
+                    console.log(sassets[unboxings[ubid].account]);
+                    let tmp = sassets[unboxings[ubid].account];
+                    const used_ids = [];
+                    for (let c in unboxings[ubid].cards){
+                        for (let d in tmp){
+                            if (tmp[d].cardid === unboxings[ubid].cards[c].cardid &&
+                                tmp[d].variant === unboxings[ubid].cards[c].variant &&
+                                tmp[d].quality === unboxings[ubid].cards[c].quality &&
+                                !used_ids.includes(tmp[d].id)){
+                                // console.log(tmp[d]);
+                                used_ids.push(tmp[d].id);
+                                unboxings[ubid].cards[c].name = tmp[d].name;
+                                unboxings[ubid].cards[c].id = tmp[d].id;
+
+                                break;
+                            }
+                        }
+                    }
+                }
+                // console.log(unboxings[ubid])
+            }
+
+            for (let ubid in unboxings){
+                // sort the card data
+                unboxings[ubid].cards = unboxings[ubid].cards.sort((a, b) => {
+                    return (a.cardid < b.cardid)?-1:1;
+                });
                 const msg = this.getString(unboxings[ubid]);
                 this.sendMessage(msg);
             }
@@ -210,7 +281,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 67132000;
+    const start_block = 67187604;
 
     start(start_block);
 }
