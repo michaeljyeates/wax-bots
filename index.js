@@ -127,7 +127,7 @@ class DeltaHandler {
             str += `${unhappy}`;
         }
 
-        str += `${obj.account} opened an ${pack_name} containing:`;
+        str += ` ${obj.account} opened an ${pack_name} containing:`;
         for (let vi in variant_indexed){
             str += `\n\n**${this.getVariantName(vi)}**\n\n` + variant_indexed[vi].join(`\n`);
         }
@@ -335,7 +335,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 67632082;
+    const start_block = 67675309;
     // const start_block = 67000000;
 
     start(start_block);
