@@ -15,6 +15,11 @@ const pack_images = {
     exotic25: 'https://cloudflare-ipfs.com/ipfs/QmNjTxU8DBN7us9cUt5y9Uju5b7KEQa4Uwj7FhsuAZ79HQ',
 }
 
+const siren_light = "🚨";
+const smiling = "😄";
+const joy = "😂";
+const unhappy = "😣";
+
 class DeltaHandler {
     constructor({config}) {
         this.config = config;
@@ -90,11 +95,11 @@ class DeltaHandler {
         // console.log(`getString`, obj);
         const variant_indexed = {};
         let str = '';
+
         let pack_name = obj.boxtype;
         if (typeof pack_images[obj.boxtype] === 'string'){
             pack_name = `[${obj.boxtype}](${pack_images[obj.boxtype]})`;
         }
-        str += `${obj.account} opened an ${pack_name} containing:`;
         obj.cards.forEach((c) => {
             if (typeof variant_indexed[c.variant] === 'undefined'){
                 variant_indexed[c.variant] = [];
@@ -103,6 +108,26 @@ class DeltaHandler {
             variant_indexed[c.variant].push(`${prefix} ${c.cardid}${c.quality} ${c.name} [${c.id}](https://gpk.market/asset/${c.id}?referral=eosdacserver)`);
         });
 
+        if (variant_indexed['collectors'] && variant_indexed['collectors'].length){
+            str += `${siren_light}`;
+        }
+        else if (variant_indexed['tigerclaw'] && variant_indexed['tigerclaw'].length){
+            str += `${siren_light}`;
+        }
+        else if (variant_indexed['sketch'] && variant_indexed['sketch'].length){
+            str += `${siren_light}`;
+        }
+        else if (variant_indexed['tigerstripe'] && variant_indexed['tigerstripe'].length){
+            str += `${joy}`;
+        }
+        else if (variant_indexed['prism'] && variant_indexed['prism'].length){
+            str += `${smiling}`;
+        }
+        else {
+            str += `${unhappy}`;
+        }
+
+        str += `${obj.account} opened an ${pack_name} containing:`;
         for (let vi in variant_indexed){
             str += `\n\n**${this.getVariantName(vi)}**\n\n` + variant_indexed[vi].join(`\n`);
         }
@@ -310,7 +335,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 67336561;
+    const start_block = 67632082;
 
     start(start_block);
 }
