@@ -108,7 +108,7 @@ class DeltaHandler {
             variant_indexed[c.variant].push(`${prefix} ${c.cardid}${c.quality} ${c.name} [${c.id.toString().replace('10000000', '')}](https://gpk.market/asset/${c.id}?referral=eosdacserver)`);
         });
 
-        if (variant_indexed['collectors'] && variant_indexed['collectors'].length){
+        if (variant_indexed['collectors'] && variant_indexed['collector'].length){
             str += `${siren_light}`;
         }
         else if (variant_indexed['tigerclaw'] && variant_indexed['tigerclaw'].length){
@@ -335,7 +335,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 67675309;
+    const start_block = 67865859;
     // const start_block = 67000000;
 
     start(start_block);
