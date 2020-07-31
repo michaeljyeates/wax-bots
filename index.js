@@ -124,7 +124,11 @@ class DeltaHandler {
                 if (!c.quality && !c.shardid){
                     quality = '';
                 }
-                const card_str = `${prefix} ${c.cardid}${quality} ${c.name} [${c.id.toString().replace('10000000', '')}](https://myth.market/asset/${c.id}?referral=eosdacserver)`;
+                let market = 'gpk';
+                if (obj.boxtype.substr(0, 7) === `shatner`){
+                    market = 'shatner';
+                }
+                const card_str = `${prefix} ${c.cardid}${quality} ${c.name} [${c.id.toString().replace('10000000', '')}](https://${market}.market/asset/${c.id}?referral=eosdacserver)`;
                 variant_indexed[c.variant].push(card_str);
             }
         });
@@ -198,7 +202,14 @@ class DeltaHandler {
             const [sold] = balance[0].split(' ');
             const [max] = stats[lookup[obj.boxtype].symbol].max_supply.split(' ');
             const percentage = ((sold / max) * 100).toFixed(1);
-            str += `\n\n------------------------------\n${sold} / ${max} \\(${percentage}%\\) ${lookup[obj.boxtype].symbol} packs opened`
+            str += `\n\n------------------------------\n${sold} / ${max} \\(${percentage}%\\) ${lookup[obj.boxtype].symbol} packs opened`;
+            str += `\n\n------------------------------\nBuy on collectables.io (https://collectables.io/?author=${lookup[obj.boxtype].code}&symbol=${lookup[obj.boxtype].symbol}&orderby_price=asc&tab=All%20Listings&ref=eosdacserver)`
+            if (lookup[obj.boxtype].symbol.substr(0, 2) == 'WS'){
+                str += ` | shatner.market (https://shatner.market/packs/${lookup[obj.boxtype].symbol}?referral=eosdacserver)`;
+            }
+            else {
+                str += ` | gpk.market (https://gpk.market/packs/${lookup[obj.boxtype].symbol}?referral=eosdacserver)`;
+            }
         }
         catch (e){
             console.log(e)
@@ -408,7 +419,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 69540000;
+    const start_block = 69547502;
     // const start_block = 67000000;
 
     start(start_block);
