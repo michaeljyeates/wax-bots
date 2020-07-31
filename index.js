@@ -13,11 +13,13 @@ const pack_images = {
     thirty: 'https://cloudflare-ipfs.com/ipfs/QmSRti2HK95NXWYG3t3he7UK7hkgw8w9TdqPc6hi5euV1p/packs/mega.jpg',
     exotic5: 'https://cloudflare-ipfs.com/ipfs/QmZBXd6CWeSYc6ZxDcRPC54dwZv4NeSBoRahY8bYDdYPui',
     exotic25: 'https://cloudflare-ipfs.com/ipfs/QmNjTxU8DBN7us9cUt5y9Uju5b7KEQa4Uwj7FhsuAZ79HQ',
+    shatnerfive: 'https://gateway.pinata.cloud/ipfs/QmWnNzB7f1EBuA3pisvJ3bMmyVnBv8UYftu7MY2gTVozbo/pack5.png',
+    shatnerthirty: 'https://gateway.pinata.cloud/ipfs/QmWnNzB7f1EBuA3pisvJ3bMmyVnBv8UYftu7MY2gTVozbo/pack30.png',
 }
 
 const siren_light = "🚨";
 const smiling = "😄";
-const joy = "😂";
+const joy = "👌🏽";
 const unhappy = "😣";
 
 class DeltaHandler {
@@ -39,7 +41,7 @@ class DeltaHandler {
         const url = `https://api.telegram.org/bot${telegram_api_key}/sendMessage`;
         const msg_obj = {
             chat_id: `@${telegram_channel}`,
-            text: msg.replace(/\./g, '\\.').replace(/\-/g, '\\-'), //.replace(/\(/g, '\\(').replace(/\)/g, '\\)'),
+            text: msg.replace(/\!/g, '\\!').replace(/\./g, '\\.').replace(/\-/g, '\\-'), //.replace(/\(/g, '\\(').replace(/\)/g, '\\)'),
             parse_mode: 'MarkdownV2'
         }
         // console.log(JSON.stringify(msg_obj));
@@ -91,8 +93,19 @@ class DeltaHandler {
         return index.charAt(0).toUpperCase() + index.substr(1).toLowerCase();
     }
 
+    async shatnerCombineString(obj) {
+        let str = `${obj.account} combined shards to form a [${obj.cards[0].name} ${obj.cards[0].rarity}](https://cloudflare-ipfs.com/ipfs/${obj.cards[0].img})`;
+
+        return str;
+    }
+
     async getString(obj) {
+        // special case for combining shatner shards
+        if (obj.boxtype === 'shatnercombine'){
+            return await this.shatnerCombineString(obj);
+        }
         // console.log(`getString`, obj);
+
         const variant_indexed = {};
         let str = '';
 
@@ -105,17 +118,25 @@ class DeltaHandler {
                 variant_indexed[c.variant] = [];
             }
             let prefix = '-';
-            variant_indexed[c.variant].push(`${prefix} ${c.cardid}${c.quality} ${c.name} [${c.id.toString().replace('10000000', '')}](https://gpk.market/asset/${c.id}?referral=eosdacserver)`);
+            // console.log(`card data`, c.id, c);
+            if (c.id){
+                let quality = c.quality || ` shard ${c.shardid}`;
+                if (!c.quality && !c.shardid){
+                    quality = '';
+                }
+                const card_str = `${prefix} ${c.cardid}${quality} ${c.name} [${c.id.toString().replace('10000000', '')}](https://myth.market/asset/${c.id}?referral=eosdacserver)`;
+                variant_indexed[c.variant].push(card_str);
+            }
         });
 
-        if (variant_indexed['collectors'] && variant_indexed['collector'].length){
+        if (variant_indexed['collector'] && variant_indexed['collector'].length){
             str += `${siren_light}`;
         }
         else if (variant_indexed['tigerclaw'] && variant_indexed['tigerclaw'].length){
             str += `${siren_light}`;
         }
         else if (variant_indexed['sketch'] && variant_indexed['sketch'].length){
-            str += `${siren_light}`;
+            str += `${joy}`;
         }
         else if (variant_indexed['tigerstripe'] && variant_indexed['tigerstripe'].length){
             str += `${joy}`;
@@ -123,13 +144,17 @@ class DeltaHandler {
         else if (variant_indexed['prism'] && variant_indexed['prism'].length){
             str += `${smiling}`;
         }
-        else {
+        else if (variant_indexed['base'] && variant_indexed['base'].length) {
             str += `${unhappy}`;
         }
 
         str += ` ${obj.account} opened an ${pack_name} containing:`;
         for (let vi in variant_indexed){
-            str += `\n\n**${this.getVariantName(vi)}**\n\n` + variant_indexed[vi].join(`\n`);
+            str += `\n\n`;
+            if (vi !== 'undefined'){
+                str += `**${this.getVariantName(vi)}**\n\n`;
+            }
+            str += variant_indexed[vi].join(`\n`);
         }
 
         // Add message with packs opened
@@ -144,6 +169,16 @@ class DeltaHandler {
                 account: 'gpk.topps',
                 symbol: 'GPKMEGA'
             },
+            shatnerfive: {
+                code: 'packs.ws',
+                account: 'shatner',
+                symbol: 'WSFIVE'
+            },
+            shatnerthirty: {
+                code: 'packs.ws',
+                account: 'shatner',
+                symbol: 'WSMEGA'
+            },
             exotic5: {
                 code: 'packs.topps',
                 account: 'gpk.topps',
@@ -155,12 +190,20 @@ class DeltaHandler {
                 symbol: 'EXOMEGA'
             },
         };
-        const stats = await this.api.rpc.get_currency_stats(lookup[obj.boxtype].code, lookup[obj.boxtype].symbol);
-        const balance = await this.api.rpc.get_currency_balance(lookup[obj.boxtype].code, lookup[obj.boxtype].account, lookup[obj.boxtype].symbol);
-        const [sold] = balance[0].split(' ');
-        const [max] = stats[lookup[obj.boxtype].symbol].max_supply.split(' ');
-        const percentage = ((sold / max) * 100).toFixed(1);
-        str += `\n\n------------------------------\n${sold} / ${max} \\(${percentage}%\\) ${lookup[obj.boxtype].symbol} packs opened`
+        try {
+            console.log(str, `getting stats`, obj, lookup[obj.boxtype]);
+            const stats = await this.api.rpc.get_currency_stats(lookup[obj.boxtype].code, lookup[obj.boxtype].symbol);
+            console.log(stats);
+            const balance = await this.api.rpc.get_currency_balance(lookup[obj.boxtype].code, lookup[obj.boxtype].account, lookup[obj.boxtype].symbol);
+            const [sold] = balance[0].split(' ');
+            const [max] = stats[lookup[obj.boxtype].symbol].max_supply.split(' ');
+            const percentage = ((sold / max) * 100).toFixed(1);
+            str += `\n\n------------------------------\n${sold} / ${max} \\(${percentage}%\\) ${lookup[obj.boxtype].symbol} packs opened`
+        }
+        catch (e){
+            console.log(e)
+            process.exit(1)
+        }
 
         return str;
     }
@@ -199,8 +242,7 @@ class DeltaHandler {
                                 code = sb.getName();
                                 // console.log(code);
 
-                                if (code === 'gpk.topps'){
-                                    // console.info(`Found ${code} delta`);
+                                if (code === 'gpk.topps' || code === 'shatner'){
 
                                     const scope = sb.getName();
                                     const table = sb.getName();
@@ -208,8 +250,10 @@ class DeltaHandler {
                                     const payer = sb.getName();
                                     const data_raw = sb.getBytes();
 
-                                    if (table === 'pendingnft.a' && row.present){
+
+                                    if ((table === 'pendingnft.a' || table === 'pending.m') && row.present){
                                         // console.log(`Found unbox for ${scope}`);
+                                        // console.info(`Found ${code} delta on table ${table}`);
 
                                         const table_type = await this.getTableType(code, table);
                                         const data_sb = new Serialize.SerialBuffer({
@@ -259,7 +303,7 @@ class DeltaHandler {
 
                                         const data = table_type.deserialize(data_sb);
 
-                                        if (data.author === 'gpk.topps'){
+                                        if (data.author === 'gpk.topps' || data.author === 'shatner'){
                                             if (typeof sassets[data.owner] === 'undefined'){
                                                 sassets[data.owner] = [];
                                             }
@@ -284,11 +328,13 @@ class DeltaHandler {
             // merge the simple assets data
             for (let ubid in unboxings){
                 if (typeof sassets[unboxings[ubid].account] !== 'undefined'){
-                    console.log(sassets[unboxings[ubid].account]);
+                    // console.log(sassets[unboxings[ubid].account]);
                     let tmp = sassets[unboxings[ubid].account];
+                    // console.log(`tmp`, tmp);
                     const used_ids = [];
                     for (let c in unboxings[ubid].cards){
                         for (let d in tmp){
+                            // console.log(`tmp and card`, tmp[d], unboxings[ubid].cards[c]);
                             if (tmp[d].cardid === unboxings[ubid].cards[c].cardid &&
                                 tmp[d].variant === unboxings[ubid].cards[c].variant &&
                                 tmp[d].quality === unboxings[ubid].cards[c].quality &&
@@ -297,7 +343,21 @@ class DeltaHandler {
                                 used_ids.push(tmp[d].id);
                                 unboxings[ubid].cards[c].name = tmp[d].name;
                                 unboxings[ubid].cards[c].id = tmp[d].id;
+                                // console.log(`tmp card data`, unboxings[ubid].cards[c]);
 
+                                break;
+                            }
+                            else if (tmp[d].cardid === unboxings[ubid].cards[c].cardid - 1 &&
+                                    typeof tmp[d].variant === 'undefined' &&
+                                    !used_ids.includes(tmp[d].id)){
+                                // shatner
+                                used_ids.push(tmp[d].id);
+                                unboxings[ubid].cards[c].name = tmp[d].name;
+                                unboxings[ubid].cards[c].rarity = tmp[d].rarity;
+                                unboxings[ubid].cards[c].shardid = tmp[d].shardid;
+                                unboxings[ubid].cards[c].id = tmp[d].id;
+                                unboxings[ubid].cards[c].cardid = tmp[d].cardid;
+                                unboxings[ubid].cards[c].img = tmp[d].img;
                                 break;
                             }
                         }
@@ -308,10 +368,23 @@ class DeltaHandler {
 
             for (let ubid in unboxings){
                 // sort the card data
+                let msg = '';
                 unboxings[ubid].cards = unboxings[ubid].cards.sort((a, b) => {
                     return (a.cardid < b.cardid)?-1:1;
                 });
-                const msg = await this.getString(unboxings[ubid]);
+                if (typeof unboxings[ubid].boxtype === 'undefined'){
+                    if (unboxings[ubid].cards.length === 1){
+                        unboxings[ubid].boxtype = 'shatnercombine';
+                    }
+                    else if (unboxings[ubid].cards.length > 10){
+                        unboxings[ubid].boxtype = 'shatnerthirty';
+                    }
+                    else if (unboxings[ubid].cards.length > 1){
+                        unboxings[ubid].boxtype = 'shatnerfive';
+                    }
+                    // console.log(`Unboxing cards`, unboxings[ubid].cards.length);
+                }
+                msg = await this.getString(unboxings[ubid]);
                 this.sendMessage(msg);
             }
         }
@@ -335,7 +408,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 67865859;
+    const start_block = 69540000;
     // const start_block = 67000000;
 
     start(start_block);
