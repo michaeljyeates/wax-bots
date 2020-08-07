@@ -5,6 +5,8 @@ const fetch = require('node-fetch');
 
 const telegram_api_key = require('./secret').telegram_api_key;
 const telegram_channel = 'packrips';
+const shard_telegram_channel = 'shatnershards';
+// const shard_telegram_channel = 'gqjfgtyu';
 // const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
@@ -36,11 +38,11 @@ class DeltaHandler {
         });
     }
 
-    async sendMessage(msg){
+    async sendMessage(msg, channel){
         console.log('Sending telegram message', msg);
         const url = `https://api.telegram.org/bot${telegram_api_key}/sendMessage`;
         const msg_obj = {
-            chat_id: `@${telegram_channel}`,
+            chat_id: `@${channel}`,
             text: msg.replace(/\!/g, '\\!').replace(/\./g, '\\.').replace(/\-/g, '\\-'), //.replace(/\(/g, '\\(').replace(/\)/g, '\\)'),
             parse_mode: 'MarkdownV2'
         }
@@ -95,6 +97,7 @@ class DeltaHandler {
 
     async shatnerCombineString(obj) {
         let str = `${obj.account} combined shards to form a [${obj.cards[0].name} ${obj.cards[0].rarity}](https://cloudflare-ipfs.com/ipfs/${obj.cards[0].img})`;
+        str += `\n\n------------------------------\n[Buy packs on shatner.market](https://shatner.market/packs/WSMEGA?referral=mryeateshere)`;
 
         return str;
     }
@@ -121,14 +124,14 @@ class DeltaHandler {
             // console.log(`card data`, c.id, c);
             if (c.id){
                 let quality = c.quality || ` shard ${c.shardid}`;
-                if (!c.quality && !c.shardid){
+                if (!c.quality && !c.shardid && `${c.shardid}` !== '0'){
                     quality = '';
                 }
                 let market = 'gpk';
                 if (obj.boxtype.substr(0, 7) === `shatner`){
                     market = 'shatner';
                 }
-                const card_str = `${prefix} ${c.cardid}${quality} ${c.name} [${c.id.toString().replace('10000000', '')}](https://${market}.market/asset/${c.id}?referral=eosdacserver)`;
+                const card_str = `${prefix} ${c.cardid}${quality} ${c.name} [${c.id.toString().replace('10000000', '')}](https://${market}.market/asset/${c.id}?referral=mryeateshere)`;
                 variant_indexed[c.variant].push(card_str);
             }
         });
@@ -203,12 +206,12 @@ class DeltaHandler {
             const [max] = stats[lookup[obj.boxtype].symbol].max_supply.split(' ');
             const percentage = ((sold / max) * 100).toFixed(1);
             str += `\n\n------------------------------\n${sold} / ${max} \\(${percentage}%\\) ${lookup[obj.boxtype].symbol} packs opened`;
-            str += `\n\n------------------------------\nBuy on collectables.io (https://collectables.io/?author=${lookup[obj.boxtype].code}&symbol=${lookup[obj.boxtype].symbol}&orderby_price=asc&tab=All%20Listings&ref=eosdacserver)`
+            // str += `\n\n------------------------------\nBuy on collectables.io \\(https://collectables.io/?author\\=${lookup[obj.boxtype].code}&amp;symbol\\=${lookup[obj.boxtype].symbol}&amp;orderby_price\\=asc&amp;tab\\=All%20Listings&amp;ref\\=mryeateshere\\)`
             if (lookup[obj.boxtype].symbol.substr(0, 2) == 'WS'){
-                str += ` | shatner.market (https://shatner.market/packs/${lookup[obj.boxtype].symbol}?referral=eosdacserver)`;
+                str += `\n\n------------------------------\n[Buy packs on shatner.market](https://shatner.market/packs/${lookup[obj.boxtype].symbol}?referral=mryeateshere)`;
             }
             else {
-                str += ` | gpk.market (https://gpk.market/packs/${lookup[obj.boxtype].symbol}?referral=eosdacserver)`;
+                str += `\n\n------------------------------\n[Buy packs on gpk.market](https://gpk.market/packs/${lookup[obj.boxtype].symbol}?referral=mryeateshere)`;
             }
         }
         catch (e){
@@ -395,8 +398,9 @@ class DeltaHandler {
                     }
                     // console.log(`Unboxing cards`, unboxings[ubid].cards.length);
                 }
+                const channel = (unboxings[ubid].boxtype === 'shatnercombine')?shard_telegram_channel:telegram_channel;
                 msg = await this.getString(unboxings[ubid]);
-                this.sendMessage(msg);
+                this.sendMessage(msg, channel);
             }
         }
     }
@@ -419,7 +423,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 69547502;
+    const start_block = 70778227;
     // const start_block = 67000000;
 
     start(start_block);
