@@ -423,7 +423,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 70778227;
+    const start_block = 70921711;
     // const start_block = 67000000;
 
     start(start_block);
