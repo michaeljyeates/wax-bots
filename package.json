@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@eosdacio/eosio-statereceiver": "^1.0.2",
+    "atomicassets": "^1.0.3",
     "eosjs": "^21.0.2",
     "int64-buffer": "^0.99.1007",
     "node-fetch": "^2.6.0"

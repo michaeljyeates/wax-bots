@@ -24,6 +24,14 @@ async-limiter@~1.0.0:
   resolved "https://registry.yarnpkg.com/async-limiter/-/async-limiter-1.0.1.tgz#dd379e94f0db8310b08291f9d64c3209766617fd"
   integrity sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==
 
+atomicassets@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/atomicassets/-/atomicassets-1.0.3.tgz#d6b3dd9108eff24f9045621d0f7ba90a68f51ecf"
+  integrity sha512-w9tT1U00F76kC6AeG9IHMRlwxOQHJajdlPNlaOeF2tbOCJF9We6ns1blWaZwLBIMjtEpN/1jCuyPoOEuRiU2Og==
+  dependencies:
+    big-integer "^1.6.48"
+    pure-cache "^1.0.5"
+
 babel-runtime@6.26.0:
   version "6.26.0"
   resolved "https://registry.yarnpkg.com/babel-runtime/-/babel-runtime-6.26.0.tgz#965c7058668e82b55d7bfe04ff2337bc8b5647fe"
@@ -38,6 +46,11 @@ base-x@^3.0.2:
   integrity sha512-Rl/1AWP4J/zRrk54hhlxH4drNxPJXYUaKffODVI53/dAsV4t9fBxyxYKAVPU1XBHxYwOWP9h9H0hM2MVw4YfJA==
   dependencies:
     safe-buffer "^5.0.1"
+
+big-integer@^1.6.48:
+  version "1.6.48"
+  resolved "https://registry.yarnpkg.com/big-integer/-/big-integer-1.6.48.tgz#8fd88bd1632cba4a1c8c3e3d7159f08bb95b4b9e"
+  integrity sha512-j51egjPa7/i+RdiRuJbPdJ2FIUYYPhvYLjzoYbcMMm62ooO6F94fETG4MTs46zPAF9Brs04OajboA/qTGuz78w==
 
 bigi@1.4.2, bigi@^1.1.0:
   version "1.4.2"
@@ -251,6 +264,11 @@ minimalistic-crypto-utils@^1.0.0, minimalistic-crypto-utils@^1.0.1:
   resolved "https://registry.yarnpkg.com/minimalistic-crypto-utils/-/minimalistic-crypto-utils-1.0.1.tgz#f6c00c1c0b082246e5c4d99dfb8c7c083b2b582a"
   integrity sha1-9sAMHAsIIkblxNmd+4x8CDsrWCo=
 
+mitt@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/mitt/-/mitt-1.2.0.tgz#cb24e6569c806e31bd4e3995787fe38a04fdf90d"
+  integrity sha512-r6lj77KlwqLhIUku9UWYes7KJtsczvolZkzp8hbaDPPaE24OmWl5s539Mytlj22siEQKosZ26qCBgda2PKwoJw==
+
 node-fetch@^2.6.0:
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.0.tgz#e633456386d4aa55863f676a7ab0daa8fdecb0fd"
@@ -260,6 +278,13 @@ pako@1.0.11:
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/pako/-/pako-1.0.11.tgz#6c9599d340d54dfd3946380252a35705a6b992bf"
   integrity sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==
+
+pure-cache@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/pure-cache/-/pure-cache-1.0.5.tgz#870c1e9f289de01c27cec42ffb4950d48386dcad"
+  integrity sha512-DH42Hwq0wHzQczXM6f4wZe4o0hvBomF8ef2hBFYEFeOt/tfycDK3n14oJEftx/nrk8ZJaaI0ZPv3z7uBTb3DuA==
+  dependencies:
+    mitt "^1.2.0"
 
 randombytes@2.0.5:
   version "2.0.5"
