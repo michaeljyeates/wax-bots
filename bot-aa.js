@@ -103,6 +103,8 @@ class DeltaHandler {
 
         str += `\n\n` + card_strings.join(`\n`);
 
+        str += `\n\n[View opened pack counts](https://heroes.atomichub.io/drops/bcheroes)`
+
         return str;
     }
 
@@ -281,7 +283,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 71112229;
+    const start_block = 71249229;
     // const start_block = 67000000;
 
     start(start_block);
