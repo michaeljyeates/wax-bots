@@ -10,8 +10,8 @@ const telegram_channel = 'packrips';
 const telegram_bot = 'packrips_bot';
 
 const pack_images = {
-    heroesfive: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack5.png',
-    heroesthirty: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack30.png'
+    heropack: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack5.png',
+    titanpack: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack30.png'
 }
 
 const atomicassets_account = 'atomicassets';
@@ -252,10 +252,10 @@ class DeltaHandler {
                 });
                 if (typeof unboxings[ubid].boxtype === 'undefined'){
                     if (unboxings[ubid].cards.length < 10){
-                        unboxings[ubid].boxtype = 'heroesfive';
+                        unboxings[ubid].boxtype = 'heropack';
                     }
                     else if (unboxings[ubid].cards.length > 10){
-                        unboxings[ubid].boxtype = 'heroesthirty';
+                        unboxings[ubid].boxtype = 'titanpack';
                     }
                 }
 
