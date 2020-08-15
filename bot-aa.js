@@ -87,6 +87,11 @@ class DeltaHandler {
         let str = '';
         // console.log('getString', obj);
 
+        const has_genesis = obj.cards.find(c => c.rarity === 'genesis');
+        if (has_genesis){
+            str += siren_light.repeat(10) + `\n`;
+        }
+
         let pack_name = obj.boxtype;
         if (typeof pack_images[obj.boxtype] === 'string'){
             pack_name = `[${obj.boxtype}](${pack_images[obj.boxtype]})`;
@@ -283,7 +288,7 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 71249229;
+    const start_block = 72145811;
     // const start_block = 67000000;
 
     start(start_block);
