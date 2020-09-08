@@ -77,7 +77,7 @@ class WSSender {
         };
 
         const port = 3030;
-        const host = '127.0.0.1';
+        const host = '0.0.0.0';
 
         server.listen(port, host, () => {
             console.log((new Date()) + ' Server is listening on port 8080');
