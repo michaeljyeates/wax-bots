@@ -15,6 +15,8 @@ const aa_api = new RpcApi(endpoint, 'atomicassets', {fetch, rateLimit: 4});
 const eos_rpc = new JsonRpc(endpoint, {fetch});
 const eos_api = new Api({ rpc: eos_rpc, signatureProvider:null, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
 
+const port = 3030;
+const host = '0.0.0.0';
 
 const { TraceHandler } = require(`./atomic-sales-tracehandler`);
 
@@ -76,8 +78,6 @@ class WSSender {
             fs.createReadStream("./ws-index.html").pipe(response);
         };
 
-        const port = 3030;
-        const host = '0.0.0.0';
 
         server.listen(port, host, () => {
             console.log((new Date()) + ' Server is listening on port 8080');

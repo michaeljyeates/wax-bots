@@ -32,7 +32,7 @@
     <div class="name"></div>
 </div>
 
-<form>
+<!-- <form>
     <label>
         Collection to watch (* for all)
         <input name="collection" id="collection" value="*" />
@@ -42,11 +42,12 @@
         <input name="endpoint" id="endpoint" value="ws://127.0.0.1:3030" />
     </label>
     <input type="submit" onclick="return start()" />
-</form>
+</form> -->
 
 
 <script>
     let ws_index = 0;
+    const port = 3030;
     function show_sale(data){
         // console.log(data);
         const sale = document.getElementById('sale');
@@ -75,10 +76,14 @@
         // $.toast({ text: msg, position: 'top-left', showHideTransition: 'plain', allowToastClose: false });
     }
 
-    function start(){
+    function start(endpoint, collection){
         const my_ws_index = ws_index++;
-        const endpoint = document.getElementById('endpoint').value;
-        const collection = document.getElementById('collection').value;
+        if (typeof endpoint === 'undefined'){
+            endpoint = document.getElementById('endpoint').value;
+        }
+        if (typeof collection === 'undefined'){
+            collection = document.getElementById('collection').value;
+        }
 
         if (endpoint && collection){
             const ws = new WebSocket(endpoint, 'echo-protocol');
@@ -98,6 +103,22 @@
 
         return false;
     }
+
+    document.addEventListener("DOMContentLoaded", function(){
+        const url = new URL(document.URL);
+        // console.log(url);
+        let collection = '*';
+        if (url.search){
+            const url_parts = url.search.substr(1).split('&');
+            console.log(url_parts);
+            const collection_part = url_parts.find(p => p.indexOf('collection=') > -1);
+            [, collection] = collection_part.split('=');
+        }
+        console.log(`Found collection as ${collection}`);
+
+        const endpoint = `ws://${url.host}`;
+        start(endpoint, collection);
+    });
 
 
 </script>
