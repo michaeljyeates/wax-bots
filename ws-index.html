@@ -1,0 +1,105 @@
+<html>
+<head>
+    <title>Websocket Demo</title>
+
+    <script language="javascript" src="/js/growl-notification/growl-notification.min.js"></script>
+
+    <link href="/js/growl-notification/light-theme.min.css" type="text/css" rel="stylesheet" />
+
+    <style>
+        .growl-notification {
+            font-family: arial;
+        }
+        .growl-notification__image {
+            min-width: inherit;
+        }
+        .growl-notification__image--custom {
+            width: 128px;
+            height: 128px;
+        }
+        .growl-notification__image--custom > img {
+            width: auto;
+            height: 128px;
+            max-width: 128px;
+        }
+        .growl-notification__close {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="sale">
+    <div class="name"></div>
+</div>
+
+<form>
+    <label>
+        Collection to watch (* for all)
+        <input name="collection" id="collection" value="*" />
+    </label>
+    <label>
+        WS Endpoint
+        <input name="endpoint" id="endpoint" value="ws://127.0.0.1:3030" />
+    </label>
+    <input type="submit" onclick="return start()" />
+</form>
+
+
+<script>
+    let ws_index = 0;
+    function show_sale(data){
+        // console.log(data);
+        const sale = document.getElementById('sale');
+        const msg = `${data.buyer} bought ${data.asset.name} for ${data.quantity}`;
+        const image_url = `http://ipfs.io/ipfs/${data.asset.data.img}`;
+        const notify_data = {
+            title: 'NFT Sold!',
+            description: msg,
+            image: {visible: true, customImage: image_url},
+            type: 'success',
+            position: 'top-right',
+            closeTimeout: 10000,
+            showButtons: false,
+            width: '600px'
+        };
+
+        const img = new Image();
+        img.src = image_url;
+        img.onload = () => {
+            GrowlNotification.notify(notify_data);
+            console.log(`Notify`, notify_data);
+        };
+
+
+
+        // $.toast({ text: msg, position: 'top-left', showHideTransition: 'plain', allowToastClose: false });
+    }
+
+    function start(){
+        const my_ws_index = ws_index++;
+        const endpoint = document.getElementById('endpoint').value;
+        const collection = document.getElementById('collection').value;
+
+        if (endpoint && collection){
+            const ws = new WebSocket(endpoint, 'echo-protocol');
+            ws.onmessage = (msg) => {
+                const msg_data = JSON.parse(msg.data);
+                // console.log(msg_data);
+
+                if (msg_data.type === 'sale'){
+                    show_sale(msg_data.data);
+                }
+            };
+            ws.onopen = () => {
+                console.log(`websocket opened to ${endpoint} with index ${my_ws_index}`);
+                ws.send(JSON.stringify({type:'register', data:{collection}}));
+            };
+        }
+
+        return false;
+    }
+
+
+</script>
+</body>
+</html>
