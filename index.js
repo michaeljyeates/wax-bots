@@ -19,6 +19,9 @@ const pack_images = {
     shatnerthirty: 'https://gateway.pinata.cloud/ipfs/QmWnNzB7f1EBuA3pisvJ3bMmyVnBv8UYftu7MY2gTVozbo/pack30.png',
 }
 
+const endpoint = 'https://wax.eosdac.io';
+const eos_rpc = new JsonRpc(endpoint, {fetch});
+
 const siren_light = "🚨";
 const smiling = "😄";
 const joy = "👌🏽";
@@ -423,8 +426,18 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 70921711;
-    // const start_block = 67000000;
+    let start_block;
+    if (typeof process.argv[2] !== 'undefined'){
+        start_block = parseInt(process.argv[2]);
+        if (isNaN(start_block)){
+            console.error(`Start block must be a number`);
+            process.exit(1);
+        }
+    }
+    else {
+        const info = await eos_rpc.get_info();
+        start_block = info.head_block_num;
+    }
 
     start(start_block);
 }

@@ -17,6 +17,7 @@ const pack_images = {
 const atomicassets_account = 'atomicassets';
 const endpoint = 'https://wax.eosdac.io';
 const atomic = new RpcApi(endpoint, atomicassets_account, { fetch, rateLimit: 4 });
+const eos_rpc = new JsonRpc(endpoint, {fetch});
 
 const siren_light = "🚨";
 const smiling = "😄";
@@ -108,7 +109,7 @@ class DeltaHandler {
 
         str += `\n\n` + card_strings.join(`\n`);
 
-        str += `\n\n[View opened pack counts](https://heroes.atomichub.io/drops/bcheroes)`
+        str += `\n\n[View opened pack counts](https://heroes.atomichub.io/tools/overview/bcheroes)`
 
         return str;
     }
@@ -288,8 +289,18 @@ const start = async (start_block) => {
 }
 
 const run = async () => {
-    const start_block = 72145811;
-    // const start_block = 67000000;
+    let start_block;
+    if (typeof process.argv[2] !== 'undefined'){
+        start_block = parseInt(process.argv[2]);
+        if (isNaN(start_block)){
+            console.error(`Start block must be a number`);
+            process.exit(1);
+        }
+    }
+    else {
+        const info = await eos_rpc.get_info();
+        start_block = info.head_block_num;
+    }
 
     start(start_block);
 }
