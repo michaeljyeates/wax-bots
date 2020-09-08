@@ -11,8 +11,16 @@
   "dependencies": {
     "@eosdacio/eosio-statereceiver": "^1.0.2",
     "atomicassets": "^1.0.3",
-    "eosjs": "^21.0.2",
+    "bs58": "^4.0.1",
+    "discord.js": "^12.3.1",
+    "eosjs": "^21.0.3",
+    "file-type": "^15.0.0",
+    "form-data": "^3.0.0",
+    "http": "^0.0.1-security",
     "int64-buffer": "^0.99.1007",
-    "node-fetch": "^2.6.0"
+    "md5": "^2.3.0",
+    "node-fetch": "^2.6.0",
+    "text-encoding": "^0.7.0",
+    "websocket": "^1.0.32"
   }
 }
