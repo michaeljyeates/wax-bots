@@ -23,6 +23,9 @@ const specific_telegram = {
 const specific_discord = {
     kennbosakgif: '749369692862283811'
 };
+const general_discord = [
+    '753197252889149441'
+];
 
 const twitter_api = {
     api_key: '6zf8WQHwa8qgqwcxKw8siCKvZ',
@@ -253,8 +256,21 @@ class TelegramSender {
                 // https://discord.com/api/oauth2/authorize?client_id=749361874532958338&permissions=0&scope=bot
                 console.error(`Channel ID ${specific_discord[asset.collection.collection_name]} not found for ${asset.collection.collection_name}, bot probably not added`);
             }
-
         }
+
+        // send to all general discord channels
+        general_discord.forEach(async cid => {
+            const channel = discord_client.channels.cache.get(cid);
+            if (channel){
+                const res = await channel.send(str.replace('<b>','').replace('</b>',''));
+                console.log('Discord response', res);
+            }
+            else {
+                // add bot link
+                // https://discord.com/api/oauth2/authorize?client_id=749361874532958338&permissions=0&scope=bot
+                console.error(`Channel ID ${cid} not found, bot probably not added`);
+            }
+        });
     };
 }
 
