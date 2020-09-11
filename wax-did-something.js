@@ -46,7 +46,8 @@ const wax_accounts = [
     'bridge.eth',
     'orderorderor',
     'waxe',
-    '.enai.waa'
+    '.enai.waa',
+    'ar2am.wam'
 ];
 
 const ignored_actions = [
