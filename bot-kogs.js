@@ -79,6 +79,9 @@ class TraceHandler {
             if (card_data.variant){
                 desc += card_data.variant + ' ';
             }
+            if (card_data.foil){
+                desc += 'FOIL ';
+            }
             if (card_data.object){
                 desc += card_data.object + ' ';
             }
