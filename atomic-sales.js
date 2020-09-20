@@ -13,8 +13,8 @@ const bs58 = require('bs58');
 const crypto = require('crypto');
 
 const telegram_api_key = require('./secret').telegram_api_key;
-const telegram_channel = 'atomicsales';
-// const telegram_channel = 'gqjfgtyu';
+// const telegram_channel = 'atomicsales';
+const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 const specific_telegram = {
     kennbosakgif: 'kennbosakgif'
