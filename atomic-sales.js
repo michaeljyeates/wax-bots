@@ -235,7 +235,17 @@ class TelegramSender {
         str += `Price : <b>${quantity}</b>\n\n`;
         str += `http://wax.atomichub.io/explorer/asset/${asset.asset_id}`;
 
-        const photo_url = `https://ipfs.io/ipfs/${data.img}`;
+        let photo_url;
+        if (data.img.substr(0, 1) === 'Q'){ // Probably ipfs hash
+            photo_url = `https://ipfs.io/ipfs/${data.img}`;
+        }
+        else if (data.img.substr(0, 4) === 'http') {
+            photo_url = data.img;
+        }
+        else {
+            console.error(`Could not find photo URL`);
+            return;
+        }
 
         // not ending the photo with image extension confuses telegram
         await this.send_telegram(str, photo_url, telegram_channel);
