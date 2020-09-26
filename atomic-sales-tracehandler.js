@@ -1,17 +1,20 @@
 const {Api, JsonRpc, Serialize} = require('eosjs');
 const fetch = require('node-fetch');
+const { TextDecoder, TextEncoder } = require('text-encoding');
 
 class TraceHandler {
     constructor({config}) {
         this.config = config;
         this.notify = [];
+        this.eos_rpc = new JsonRpc(config.eos.endpoint, {fetch});
+        this.eos_api = new Api({ rpc: this.eos_rpc, signatureProvider:null, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
     }
 
     add_sale_notify(handler){
         this.notify.push(handler);
     }
 
-    async get_asset_data(owner, asset_id) {
+    async get_atomic_data(owner, asset_id) {
         const url = `${this.config.atomic_endpoint}/atomicassets/v1/assets?owner=${owner}&ids=${asset_id}&page=1&limit=1`;
         const res = await fetch(url);
         const json = await res.json();
@@ -19,105 +22,43 @@ class TraceHandler {
         return json.data[0];
     }
 
-    async process(buyer, seller, quantity, asset_id, retries = 0) {
+
+
+    async process_atomic(buyer, seller, quantity, asset_id, retries = 0) {
         if (retries >= 10){
             console.log(`Giving up on ${asset_id}`);
             return;
         }
         console.log(`${buyer} paid ${quantity} to ${seller} for ${asset_id}`);
-        const asset = await this.get_asset_data(buyer, asset_id);
+        const asset = await this.get_atomic_data(buyer, asset_id);
         // console.log(asset);
         if (!asset){
             retries++;
             // console.log(`Couldnt get asset data`);
             setTimeout(() => {
-                this.process(buyer, seller, quantity, asset_id, retries);
+                this.process_atomic(buyer, seller, quantity, asset_id, retries);
             }, 3000);
             return;
         }
 
         this.notify.forEach((n) => {
-            n.sale(buyer, seller, quantity, asset);
+            n.sale('atomic', buyer, seller, quantity, asset);
         });
 
     }
 
     async process_myth(asset){
         console.log(asset);
-        const data = JSON.parse(asset.mdata);
+        const asset_data = JSON.parse(asset.mdata);
+        asset_data.asset_id = asset.assetid;
+        asset_data.category = asset.category;
+        asset_data.author = asset.author;
+
         console.log(`${asset.buyer} paid ${asset.price} to ${asset.seller} for ${asset.assetid}`);
 
-        let str = `Name : ${data.name}\n`;
-        str += `Author : ${asset.author}\n`;
-        str += `Category : ${asset.category}\n`;
-        str += `Buyer : ${asset.buyer}\n`;
-        str += `Seller : ${asset.seller}\n`;
-        if (data.rarity){
-            str += `Rarity : ${data.rarity}\n`;
-        }
-        if (data.shardid){
-            str += `Shard ID : ${data.shardid}\n`;
-        }
-        if (data.variant){
-            str += `Variant : ${data.variant}\n`;
-        }
-        str += `Price : <b>${asset.price}</b>\n\n`;
-        let market = 'myth';
-        if (asset.author === 'shatner'){
-            market = 'shatner';
-        }
-        else if (asset.author === 'officialhero'){
-            market = 'heroes';
-        }
-        else if (asset.author === 'gpk.topps'){
-            market = 'gpk';
-        }
-        else {
-            console.log(`Unknown author! ${asset.author}`);
-        }
-        str += `https://${market}.market/asset/${asset.assetid}?referral=mryeateshere`
-
-        this.sendMessage(str, `https://ipfs.io/ipfs/${data.img}`, this.config.telegram_channel);
-
-        if (asset.collection && typeof specific_telegram[asset.collection.collection_name] !== 'undefined'){
-            this.sendMessage(str, `https://ipfs.io/ipfs/${data.img}?file=img.png`, specific_telegram[asset.collection.collection_name]);
-        }
-    }
-
-    async process_collectables(asset){
-        // console.log(asset);
-        const data = JSON.parse(asset.mdata);
-        console.log(`${asset.buyer} paid ${asset.price} to ${asset.seller} for ${asset.assetid}`);
-
-        let str = `Name : ${data.name}\n`;
-        str += `Author : ${asset.author}\n`;
-        str += `Category : ${asset.category}\n`;
-        str += `Buyer : ${asset.buyer}\n`;
-        str += `Seller : ${asset.seller}\n`;
-        if (data.rarity){
-            str += `Rarity : ${data.rarity}\n`;
-        }
-        str += `Price : <b>${asset.price}</b>\n\n`;
-        let market = 'myth';
-        if (asset.author === 'shatner'){
-            market = 'shatner';
-        }
-        else if (asset.author === 'officialhero'){
-            market = 'heroes';
-        }
-        else if (asset.author === 'gpk.topps'){
-            market = 'gpk';
-        }
-        else {
-            console.log(`Unknown author! ${asset.author}`);
-        }
-        str += `https://${market}.market/asset/${asset.assetid}?referral=mryeateshere`
-
-        this.sendMessage(str, `https://ipfs.io/ipfs/${data.img}`, this.config.telegram_channel);
-
-        if (typeof specific_telegram[asset.collection.collection_name] !== 'undefined'){
-            this.sendMessage(str, `https://ipfs.io/ipfs/${data.img}?file=img.png`, specific_telegram[asset.collection.collection_name]);
-        }
+        this.notify.forEach((n) => {
+            n.sale('myth', asset.buyer, asset.seller, asset.price, asset_data);
+        });
     }
 
     async queueTrace(block_num, traces, block_timestamp) {
@@ -209,7 +150,7 @@ class TraceHandler {
                         }
                     }
 
-                    await this.process(buyer, seller, quantity, asset_id);
+                    await this.process_atomic(buyer, seller, quantity, asset_id);
                 }
                 else {
                     console.error(`First action wasnt transfer in ${st.id}`);
@@ -219,16 +160,16 @@ class TraceHandler {
             // process.exit(0)
         }
 
-        /*if (myth_sale_traces.length){
+        if (myth_sale_traces.length){
             myth_sale_traces.forEach(ms => {
-                const act = eos_api.deserializeActions([ms]).then(act => {
+                const act = this.eos_api.deserializeActions([ms]).then(act => {
                     console.log(act[0]);
                     this.process_myth(act[0].data);
                 });
             });
         }
 
-        if (collectables_sale_traces.length){
+        /*if (collectables_sale_traces.length){
             collectables_sale_traces.forEach(trx => {
                 console.log(trx);
             });

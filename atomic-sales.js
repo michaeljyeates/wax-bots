@@ -13,8 +13,8 @@ const bs58 = require('bs58');
 const crypto = require('crypto');
 
 const telegram_api_key = require('./secret').telegram_api_key;
-const telegram_channel = 'atomicsales';
-// const telegram_channel = 'gqjfgtyu';
+// const telegram_channel = 'atomicsales';
+const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 const specific_telegram = {
     kennbosakgif: 'kennbosakgif'
@@ -189,74 +189,17 @@ class TelegramSender {
         return resp_json
     }
 
-
-    async sale (buyer, seller, quantity, asset) {
-
-        console.log(asset);
-
-        const data = asset.data;
-        console.log(`Asset data `, data);
-
-        let mint = 'n/a';
-        if (asset.template){
-            let max_supply = asset.template.max_supply;
-            if (asset.template.max_supply === 0){
-                max_supply = '∞';
-            }
-            mint = `${asset.template_mint} / ${asset.template.issued_supply} (max ${max_supply})`;
-        }
-
-        let str = `Name : ${data.name}\n`;
-        str += `Collection : ${asset.collection.collection_name}\n`;
-        str += `Buyer : ${buyer}\n`;
-        str += `Seller : ${seller}\n`;
-        str += `Mint : ${mint}\n`;
-        if (data.rarity){
-            str += `Rarity : ${data.rarity}\n`;
-        }
-        if (data.variant){
-            str += `Variant : ${data.variant}\n`;
-        }
-        if (data.cardid && data.quality){
-            str += `Card : ${data.cardid}${data.quality}\n`;
-        }
-        if (data.foil){
-            str += `Foil : YES\n`;
-        }
-        if (data.object){
-            str += `Object : ${data.object}\n`;
-        }
-        if (data.border_color){
-            str += `Border Color : ${data.border_color}\n`;
-        }
-        if (data.object_collection){
-            str += `Object Collection : ${data.object_collection}\n`;
-        }
-        str += `Price : <b>${quantity}</b>\n\n`;
-        str += `http://wax.atomichub.io/explorer/asset/${asset.asset_id}`;
-
-        let photo_url;
-        if (data.img.substr(0, 1) === 'Q'){ // Probably ipfs hash
-            photo_url = `https://ipfs.io/ipfs/${data.img}`;
-        }
-        else if (data.img.substr(0, 4) === 'http') {
-            photo_url = data.img;
-        }
-        else {
-            console.error(`Could not find photo URL`);
-            return;
-        }
-
+    async send_message (str, photo_url, collection) {
         // not ending the photo with image extension confuses telegram
         await this.send_telegram(str, photo_url, telegram_channel);
 
-        if (typeof specific_telegram[asset.collection.collection_name] !== 'undefined'){
-            await this.send_telegram(str, photo_url, specific_telegram[asset.collection.collection_name]);
+        if (typeof specific_telegram[collection] !== 'undefined'){
+            await this.send_telegram(str, photo_url, specific_telegram[collection]);
         }
 
-        if (typeof specific_discord[asset.collection.collection_name] !== 'undefined'){
+        if (typeof specific_discord[collection] !== 'undefined'){
             // console.log(`Sending discord`);
-            const channel = discord_client.channels.cache.get(specific_discord[asset.collection.collection_name]);
+            const channel = discord_client.channels.cache.get(specific_discord[collection]);
             if (channel){
                 const res = await channel.send(str.replace('<b>','').replace('</b>',''));
                 console.log('Discord response', res);
@@ -264,7 +207,7 @@ class TelegramSender {
             else {
                 // add bot link
                 // https://discord.com/api/oauth2/authorize?client_id=749361874532958338&permissions=0&scope=bot
-                console.error(`Channel ID ${specific_discord[asset.collection.collection_name]} not found for ${asset.collection.collection_name}, bot probably not added`);
+                console.error(`Channel ID ${specific_discord[collection]} not found for ${collection}, bot probably not added`);
             }
         }
 
@@ -281,6 +224,112 @@ class TelegramSender {
                 console.error(`Channel ID ${cid} not found, bot probably not added`);
             }
         });
+    }
+
+    async sale (market, buyer, seller, quantity, asset) {
+
+        console.log(asset);
+
+        let data = asset;
+        if (market === 'atomic'){
+            data = asset.data;
+        }
+        console.log(`Asset data `, data);
+
+        let mint = '';
+        if (asset.template){
+            let max_supply = asset.template.max_supply;
+            if (asset.template.max_supply === 0){
+                max_supply = '∞';
+            }
+            mint = `${asset.template_mint} / ${asset.template.issued_supply} (max ${max_supply})`;
+        }
+
+        let str = `Name : ${data.name}\n`;
+        if (asset.collection){
+            str += `Collection : ${asset.collection.collection_name}\n`;
+        }
+        if (asset.author){
+            str += `Author : ${asset.author}\n`;
+        }
+        if (asset.category){
+            str += `Category : ${asset.category}\n`;
+        }
+        str += `Buyer : ${buyer}\n`;
+        str += `Seller : ${seller}\n`;
+        if (mint){
+            str += `Mint : ${mint}\n`;
+        }
+        if (data.rarity){
+            str += `Rarity : ${data.rarity}\n`;
+        }
+        if (data.shardid){
+            str += `Shard Number : ${data.shardid}\n`;
+        }
+        if (data.variant){
+            str += `Variant : ${data.variant}\n`;
+        }
+        if (data.cardid && data.quality){
+            str += `Card : ${data.cardid}${data.quality}\n`;
+        }
+        else if (data.cardid){
+            str += `Card : ${data.cardid}\n`;
+        }
+        if (data.foil){
+            str += `Foil : YES\n`;
+        }
+        if (data.object){
+            str += `Object : ${data.object}\n`;
+        }
+        if (data.border_color){
+            str += `Border Color : ${data.border_color}\n`;
+        }
+        if (data.object_collection){
+            str += `Object Collection : ${data.object_collection}\n`;
+        }
+        str += `Price : <b>${quantity}</b>\n\n`;
+
+
+        if (market === 'myth'){
+            if (asset.author === 'shatner'){
+                market = 'shatner';
+            }
+            else if (asset.author === 'officialhero'){
+                market = 'heroes';
+            }
+            else if (asset.author === 'gpk.topps'){
+                market = 'gpk';
+            }
+            else {
+                console.log(`Unknown author! ${asset.author}`);
+            }
+            str += `https://${market}.market/asset/${asset.asset_id}?referral=mryeateshere`
+        }
+        else if (market === 'atomic'){
+            str += `http://wax.atomichub.io/explorer/asset/${asset.asset_id}`;
+        }
+
+        let photo_url;
+        if (data.img.substr(0, 1) === 'Q'){ // Probably ipfs hash
+            photo_url = `https://ipfs.io/ipfs/${data.img}`;
+        }
+        else if (data.img.substr(0, 4) === 'http') {
+            photo_url = data.img;
+        }
+        else {
+            console.error(`Could not find photo URL`);
+            return;
+        }
+
+        let collection = 'unknown';
+        if (market === 'atomic' && asset.collection){
+            collection = asset.collection.collection_name;
+        }
+        else if (market === 'myth'){
+            collection = asset.author;
+        }
+
+        await  this.send_message(str, photo_url, collection);
     };
 }
 
