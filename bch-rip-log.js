@@ -68,6 +68,10 @@ class TraceHandler {
                                             opener: act[0].data.from,
                                             asset_id: act[0].data.asset_ids[0]
                                         });
+
+                                        if (queue.length === 125){
+                                            finished = true;
+                                        }
                                         // opens.push({
                                         //     opener: act[0].data.from,
                                         //     pack: asset.template.immutable_data.name,
