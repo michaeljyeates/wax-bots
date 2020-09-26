@@ -311,6 +311,9 @@ class TelegramSender {
         else if (market === 'simple'){
             str += `https://wax.simplemarket.io/products/asset/${asset.asset_id}?locale=en`;
         }
+        else if (market === 'waxstash'){
+            str += `https://waxstash.com`;
+        }
 
         let photo_url;
         if (data.img.substr(0, 1) === 'Q'){ // Probably ipfs hash

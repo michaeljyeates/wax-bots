@@ -26,8 +26,18 @@ class TraceHandler {
         const res = await this.eos_rpc.get_table_rows({code: 'simpleassets', scope: owner, table: 'sassets', lower_bound: asset_id, upper_bound: asset_id, limit: 1});
 
         if (res.rows.length){
-            return res.rows[0];
+            const asset = res.rows[0];
+            let mdata = {}, idata = {};
+            if (asset.mdata){
+                mdata = JSON.parse(asset.mdata);
+            }
+            if (asset.idata){
+                idata = JSON.parse(asset.idata);
+            }
+            asset.data = Object.assign(mdata, idata);
+            return asset;
         }
+
         return null;
     }
 
@@ -81,7 +91,11 @@ class TraceHandler {
                 const quantity = sale_data[seller][i][1];
 
                 const asset = await this.get_simple_data(buyer, asset_id);
-                const asset_data = JSON.parse(asset.mdata);
+                if (!asset){
+                    console.log(`Failed to parse simpleasset ${asset_id}, owned by ${buyer}`);
+                    continue;
+                }
+                const asset_data = asset.data;
                 console.log(`${buyer} paid ${quantity} to ${seller} for ${asset.id}`);
 
                 asset_data.asset_id = asset_id;
@@ -95,9 +109,23 @@ class TraceHandler {
         }
     }
 
+    async process_waxstash(data){
+        const asset = await this.get_simple_data(data.buyer, data.asset_id);
+        const asset_data = asset.data;
+        console.log(`${data.buyer} paid ${data.quantity} to ${data.seller} for ${data.asset_id}`);
+
+        asset_data.asset_id = data.asset_id;
+        asset_data.category = asset.category;
+        asset_data.author = asset.author;
+
+        this.notify.forEach((n) => {
+            n.sale('waxstash', data.buyer, data.seller, data.quantity, asset_data);
+        });
+    }
+
     async queueTrace(block_num, traces, block_timestamp) {
 
-        const atomic_sale_traces = [], myth_sale_traces = [], collectables_sale_traces = [], simple_sale_traces = [];
+        const atomic_sale_traces = [], myth_sale_traces = [], collectables_sale_traces = [], simple_sale_traces = [], waxstash_sale_traces = [];
 
         for (const trace of traces) {
             switch (trace[0]) {
@@ -118,6 +146,20 @@ class TraceHandler {
                                 }
                                 else if (action[1].act.account === 'simplemarket' && action[1].act.name === 'buylog'){
                                     simple_sale_traces.push(action[1].act);
+                                    continue;
+                                }
+                                else if (action[1].act.account === 'eosio.token' && action[1].act.name === 'transfer'){
+                                    const sb = new Serialize.SerialBuffer({
+                                        textEncoder: new TextEncoder,
+                                        textDecoder: new TextDecoder,
+                                        array: action[1].act.data
+                                    });
+                                    const from = sb.getName();
+                                    const to = sb.getName();
+
+                                    if (to === 'waxstashsale'){
+                                        waxstash_sale_traces.push(trx);
+                                    }
                                     continue;
                                 }
                                 break;
@@ -209,6 +251,40 @@ class TraceHandler {
                     console.log(act[0].data);
                     this.process_simple(act[0].data);
                 });
+            });
+        }
+
+        if (waxstash_sale_traces.length){
+            waxstash_sale_traces.forEach(trx => {
+                // console.log(trx)
+                let seller, buyer, asset_id, quantity;
+                trx.action_traces.forEach(a => {
+                    if (a[1].act.account === 'eosio.token' && a[1].act.name === 'transfer'){
+                        const sb = new Serialize.SerialBuffer({
+                            textEncoder: new TextEncoder,
+                            textDecoder: new TextDecoder,
+                            array: a[1].act.data
+                        });
+                        const from = sb.getName();
+                        const to = sb.getName();
+                        const qty = sb.getAsset();
+                        const memo = sb.getString();
+
+                        if (to === 'waxstashsale' && memo.indexOf(' Author:') > -1){
+                            buyer = from;
+                            quantity = qty;
+                            const [asset_str] = memo.split(' ');
+                            asset_id = asset_str.replace('Id:', '');
+                        }
+                        else if (memo.indexOf('SOLD ASSET') > -1){
+                            seller = to;
+                        }
+                    }
+                });
+
+                if (seller && buyer && asset_id && quantity){
+                    this.process_waxstash({ seller, buyer, asset_id, quantity });
+                }
             });
         }
 
