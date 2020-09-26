@@ -22,6 +22,15 @@ class TraceHandler {
         return json.data[0];
     }
 
+    async get_simple_data(owner, asset_id) {
+        const res = await this.eos_rpc.get_table_rows({code: 'simpleassets', scope: owner, table: 'sassets', lower_bound: asset_id, upper_bound: asset_id, limit: 1});
+
+        if (res.rows.length){
+            return res.rows[0];
+        }
+        return null;
+    }
+
 
 
     async process_atomic(buyer, seller, quantity, asset_id, retries = 0) {
@@ -61,9 +70,34 @@ class TraceHandler {
         });
     }
 
+    async process_simple(data){
+        // console.log(data);
+        const buyer = data.from;
+        const sale_data = JSON.parse(data.assets_seller);
+        // console.log(sale_data);
+        for (const seller in sale_data){
+            for (let i=0; i < sale_data[seller].length; i++){
+                const asset_id = sale_data[seller][i][0];
+                const quantity = sale_data[seller][i][1];
+
+                const asset = await this.get_simple_data(buyer, asset_id);
+                const asset_data = JSON.parse(asset.mdata);
+                console.log(`${buyer} paid ${quantity} to ${seller} for ${asset.id}`);
+
+                asset_data.asset_id = asset_id;
+                asset_data.category = asset.category;
+                asset_data.author = asset.author;
+
+                this.notify.forEach((n) => {
+                    n.sale('simple', buyer, seller, quantity, asset_data);
+                });
+            }
+        }
+    }
+
     async queueTrace(block_num, traces, block_timestamp) {
 
-        const atomic_sale_traces = [], myth_sale_traces = [], collectables_sale_traces = [];
+        const atomic_sale_traces = [], myth_sale_traces = [], collectables_sale_traces = [], simple_sale_traces = [];
 
         for (const trace of traces) {
             switch (trace[0]) {
@@ -82,8 +116,8 @@ class TraceHandler {
                                     myth_sale_traces.push(action[1].act);
                                     continue;
                                 }
-                                else if (action[1].act.account === 'market.place' && action[1].act.name === 'buy'){
-                                    collectables_sale_traces.push(trx);
+                                else if (action[1].act.account === 'simplemarket' && action[1].act.name === 'buylog'){
+                                    simple_sale_traces.push(action[1].act);
                                     continue;
                                 }
                                 break;
@@ -165,6 +199,15 @@ class TraceHandler {
                 const act = this.eos_api.deserializeActions([ms]).then(act => {
                     console.log(act[0]);
                     this.process_myth(act[0].data);
+                });
+            });
+        }
+
+        if (simple_sale_traces.length){
+            simple_sale_traces.forEach(ms => {
+                const act = this.eos_api.deserializeActions([ms]).then(act => {
+                    console.log(act[0].data);
+                    this.process_simple(act[0].data);
                 });
             });
         }

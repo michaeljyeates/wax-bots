@@ -306,7 +306,10 @@ class TelegramSender {
             str += `https://${market}.market/asset/${asset.asset_id}?referral=mryeateshere`
         }
         else if (market === 'atomic'){
-            str += `http://wax.atomichub.io/explorer/asset/${asset.asset_id}`;
+            str += `https://wax.atomichub.io/explorer/asset/${asset.asset_id}`;
+        }
+        else if (market === 'simple'){
+            str += `https://wax.simplemarket.io/products/asset/${asset.asset_id}?locale=en`;
         }
 
         let photo_url;
