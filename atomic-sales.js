@@ -21,7 +21,8 @@ const specific_telegram = {
     // kennbosakgif: 'gqjfgtyu'
 };
 const specific_discord = {
-    kennbosakgif: '749369692862283811'
+    kennbosakgif: '749369692862283811',
+    crptomonkeys: '759708656392208415'
 };
 const general_discord = [
     '753197252889149441'
