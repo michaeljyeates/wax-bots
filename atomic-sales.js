@@ -12,7 +12,8 @@ const md5 = require('md5');
 const bs58 = require('bs58');
 const crypto = require('crypto');
 
-const telegram_api_key = require('./secret').telegram_api_key;
+const secret = require('./secret');
+const telegram_api_key = secret.telegram_api_key;
 const telegram_channel = 'atomicsales';
 // const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
@@ -28,13 +29,9 @@ const general_discord = [
     '753197252889149441'
 ];
 
-const twitter_api = {
-    api_key: '6zf8WQHwa8qgqwcxKw8siCKvZ',
-    api_secret: 'NJroDbkDTZKDlQEcodIO8kWffpBKzQVa2KifUI9PGcxA9Y9VR9',
-    bearer_token: 'AAAAAAAAAAAAAAAAAAAAANz3HAEAAAAA6q1ePhpkxdwoLmAprAjnop%2FTpxU%3DG4g9O8zlMDo6o12hQEDj0fOWGhdkghyIL3Lg0xvDxxGL5WpA6F'
-}
+const twitter_api = secret.twitter;
 
-const discord_bot_token = 'NzQ5MzYxODc0NTMyOTU4MzM4.X0q3oQ.ynKQ6wM8ICmSlbmEk8gL4-7wzJg';
+const discord_bot_token = secret.discord.bot_token;
 const discord_client = new Discord.Client();
 discord_client.login(discord_bot_token);
 
