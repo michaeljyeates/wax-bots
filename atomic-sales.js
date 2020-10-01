@@ -258,6 +258,9 @@ class TelegramSender {
         if (mint){
             str += `Mint : ${mint}\n`;
         }
+        else if (asset.mint){
+            str += `Mint : ${asset.mint}\n`;
+        }
         if (data.rarity){
             str += `Rarity : ${data.rarity}\n`;
         }
