@@ -146,6 +146,10 @@ class WSSender {
     async sale (buyer, seller, quantity, asset) {
         console.log('SALE! Sending to ws', buyer, seller, quantity, asset);
 
+        if (!asset.collection){
+            return;
+        }
+
         const collection = asset.collection.collection_name;
         if (typeof this.clients[collection] !== 'undefined'){
             this.clients[collection].forEach((c) => {this.send_sale(c, buyer, seller, quantity, asset)});
