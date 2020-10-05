@@ -224,6 +224,25 @@ class TelegramSender {
         });
     }
 
+    async getGPKMint(sassets_id) {
+        const res = await eos_rpc.get_table_rows({
+            code: 'simpleassets',
+            scope: 'atomicbridge',
+            table: 'sassets',
+            lower_bound: sassets_id,
+            upper_bound: sassets_id
+        });
+
+        let mint = 0;
+
+        if (res.rows && res.rows.length){
+            const mdata = JSON.parse(res.rows[0].mdata);
+            mint = parseInt(mdata.mint);
+        }
+
+        return mint;
+    }
+
     async sale (market, buyer, seller, quantity, asset) {
 
         console.log(asset);
@@ -235,7 +254,11 @@ class TelegramSender {
         console.log(`Asset data `, data);
 
         let mint = '';
-        if (asset.template){
+        if (data.sassets_id){
+            mint = await this.getGPKMint(data.sassets_id);
+            aa.template_mint = '0';
+        }
+        else if (asset.template){
             let max_supply = asset.template.max_supply;
             if (asset.template.max_supply === 0){
                 max_supply = '∞';
