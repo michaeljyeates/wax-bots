@@ -22,8 +22,15 @@ const specific_telegram = {
     // kennbosakgif: 'gqjfgtyu'
 };
 const specific_discord = {
-    kennbosakgif: '749369692862283811',
-    crptomonkeys: '759708656392208415'
+    kennbosakgif: ['749369692862283811'],
+    crptomonkeys: ['759708656392208415', '767855743981584395'],
+    pepe: ['767855781030527026'],
+    'alien.worlds': ['767855896306647073'],
+    niftywizards: ['767855818241998858'],
+    officialhero: ['767855840861618196'],
+    kogsofficial: ['767855866979418112'],
+    'gpk.topps': ['767855921401430057'],
+    darkcountryh: ['767971691309170718']
 };
 const general_discord = [
     '753197252889149441'
@@ -197,15 +204,18 @@ class TelegramSender {
 
         if (typeof specific_discord[collection] !== 'undefined'){
             // console.log(`Sending discord`);
-            const channel = discord_client.channels.cache.get(specific_discord[collection]);
-            if (channel){
-                const res = await channel.send(str.replace('<b>','').replace('</b>',''));
-                console.log('Discord response', res);
-            }
-            else {
-                // add bot link
-                // https://discord.com/api/oauth2/authorize?client_id=749361874532958338&permissions=0&scope=bot
-                console.error(`Channel ID ${specific_discord[collection]} not found for ${collection}, bot probably not added`);
+            for (let c = 0; c < specific_discord[collection].length; c++) {
+                const channel_name = specific_discord[collection][c];
+                const channel = discord_client.channels.cache.get(channel_name);
+                if (channel){
+                    const res = await channel.send(str.replace('<b>','').replace('</b>',''));
+                    console.log('Discord response', res);
+                }
+                else {
+                    // add bot link
+                    // https://discord.com/api/oauth2/authorize?client_id=749361874532958338&permissions=0&scope=bot
+                    console.error(`Channel ID ${channel_name} not found for ${collection}, bot probably not added`);
+                }
             }
         }
 
