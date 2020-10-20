@@ -266,7 +266,7 @@ class TelegramSender {
         let mint = '';
         if (data.sassets_id){
             mint = await this.getGPKMint(data.sassets_id);
-            aa.template_mint = '0';
+            data.template_mint = '0';
         }
         else if (asset.template){
             let max_supply = asset.template.max_supply;
