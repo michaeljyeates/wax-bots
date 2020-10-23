@@ -127,6 +127,7 @@ class TraceHandler {
                 Epic: '🔮',
                 Legendary: '⭐️',
                 Mythical: '🔥💎',
+                XDimension: '🛸'
             }
 
             if (typeof emoji[card_data.rarity] !== 'undefined'){
