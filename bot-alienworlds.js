@@ -130,7 +130,10 @@ class TraceHandler {
                 XDimension: '🛸'
             }
 
-            if (typeof emoji[card_data.rarity] !== 'undefined'){
+            if (typeof emoji[card_data.shine] !== 'undefined'){
+                desc += `${emoji[card_data.shine]} `;
+            }
+            else if (typeof emoji[card_data.rarity] !== 'undefined'){
                 desc += `${emoji[card_data.rarity]} `;
             }
             desc += card_data.name + ' ';
