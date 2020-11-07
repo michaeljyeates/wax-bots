@@ -30,7 +30,8 @@ const specific_discord = {
     officialhero: ['767855840861618196'],
     kogsofficial: ['767855866979418112'],
     'gpk.topps': ['767855921401430057'],
-    darkcountryh: ['767971691309170718']
+    darkcountryh: ['767971691309170718'],
+    atari: ['774015171030286346']
 };
 const general_discord = [
     '753197252889149441'
