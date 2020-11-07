@@ -16,6 +16,7 @@ const pack_images = {
 
 const unbox_contracts = ['blockunboxer'];
 
+const ipfs_prefix = 'https://ipfs.io/ipfs/';
 const atomicassets_account = 'atomicassets';
 const atomic_endpoint = 'https://wax.api.atomicassets.io';
 const endpoint = 'https://wax.eosdac.io';
@@ -112,14 +113,14 @@ class TraceHandler {
     }
 
     escapeTelegram(str){
-        return str.replace(/\!/g, '\\!').replace(/\./g, '\\.').replace(/\-/g, '\\-').replace(/\#/g, '\\#');
+        return str.replace(/\!/g, '\\!').replace(/\./g, '\\.').replace(/\-/g, '\\-').replace(/\#/g, '\\#').replace(/\*/g, '\\*').replace(/\_/g, '\\_');
     }
 
     async processMessage(minted, pack_data){
         const opener = minted[0].new_asset_owner;
-        console.log(pack_data);
+        // console.log(pack_data);
 
-        const pack_name_str = this.escapeTelegram(`[${pack_data.name}](${pack_data.img})`);
+        const pack_name_str = this.escapeTelegram(`[${pack_data.name}](${ipfs_prefix}${pack_data.data.img})`);
         let str = `${this.escapeTelegram(opener)} opened a ${pack_name_str} pack containing:\n\n`;
         str += this.escapeTelegram(this.getString(minted));
 
