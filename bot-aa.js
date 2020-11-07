@@ -14,7 +14,7 @@ const pack_images = {
     titanpack: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack30.png'
 }
 
-const unbox_contracts = ['blockunboxer'];
+const unbox_contracts = ['atomicpacksx', 'blockunboxer'];
 
 const ipfs_prefix = 'https://ipfs.io/ipfs/';
 const atomicassets_account = 'atomicassets';
