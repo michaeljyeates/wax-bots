@@ -9,21 +9,15 @@ const telegram_channel = 'packrips';
 // const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
-const pack_images = {
-    heropack: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack5.png',
-    titanpack: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack30.png'
-}
-
 const unbox_contracts = ['atomicpacksx', 'blockunboxer'];
 
 const ipfs_prefix = 'https://ipfs.io/ipfs/';
 const atomicassets_account = 'atomicassets';
 const atomic_endpoint = 'https://wax.api.atomicassets.io';
-const endpoint = 'https://wax.eosdac.io';
+const endpoint = 'https://api.waxsweden.org';
 const atomic = new ExplorerApi(atomic_endpoint, atomicassets_account, { fetch, rateLimit: 4 });
 const eos_rpc = new JsonRpc(endpoint, {fetch});
 const eos_api = new Api({ rpc: eos_rpc, signatureProvider:null, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
-
 
 
 class TraceHandler {
@@ -95,6 +89,7 @@ class TraceHandler {
                 Epic: '🔮',
                 Legendary: '⭐️',
                 Mythical: '🔥💎',
+                Mythic: '🔥💎',
                 XDimension: '🛸'
             }
 
@@ -147,7 +142,7 @@ class TraceHandler {
                     pack_data = null
                     // console.log(trx)
                     for (let action of trx.action_traces) {
-                        //console.log(action)
+                        // console.log(action)
                         switch (action[0]) {
                             case 'action_trace_v0':
                                 if (unbox_contracts.includes(action[1].act.account) && action[1].act.name == 'claimunboxed'){
@@ -158,6 +153,7 @@ class TraceHandler {
                                 if (action[1].act.account == 'atomicpoolsx' && action[1].act.name == 'claim'){
                                     const action_deser = await eos_api.deserializeActions([action[1].act]);
                                     pack_data = await atomic.getAsset(action_deser[0].data.claim_id);
+                                    // console.log(pack_data);
                                     is_unbox = true;
                                 }
                                 else if (is_unbox && action[1].act.account === 'atomicassets' && action[1].act.name == 'logmint' && action[1].receiver == 'atomicassets'){
@@ -171,7 +167,8 @@ class TraceHandler {
                                         const asset_id = action_deser[0].data.asset_ids[a];
                                         const asset = await atomic.getAsset(asset_id);
                                         // console.log(asset);
-                                        asset.new_asset_owner = asset.owner;
+                                        asset.new_asset_owner = action_deser[0].data.to;
+                                        // console.log(asset);
                                         minted.push(asset);
                                     }
                                     // minted.push(action_deser[0].data);
