@@ -78,7 +78,13 @@ class TraceHandler {
         let str = '';
         const items = [];
         minted.forEach(m => {
-            const card_data = this.normaliseTemplateData(m.immutable_template_data);
+            let card_data;
+            if (m.immutable_template_data){
+                card_data = this.normaliseTemplateData(m.immutable_template_data);
+            }
+            else {
+                card_data = m.data;
+            }
             const market_url = 'https://wax.atomichub.io';
             const market_link = `[${m.asset_id}](${market_url}/explorer/asset/${m.asset_id})`;
             let desc = '';
@@ -149,9 +155,26 @@ class TraceHandler {
                                     pack_data = await atomic.getAsset(action_deser[0].data.pack_asset_id);
                                     is_unbox = true;
                                 }
+                                if (action[1].act.account == 'atomicpoolsx' && action[1].act.name == 'claim'){
+                                    const action_deser = await eos_api.deserializeActions([action[1].act]);
+                                    pack_data = await atomic.getAsset(action_deser[0].data.claim_id);
+                                    is_unbox = true;
+                                }
                                 else if (is_unbox && action[1].act.account === 'atomicassets' && action[1].act.name == 'logmint' && action[1].receiver == 'atomicassets'){
                                     const action_deser = await eos_api.deserializeActions([action[1].act]);
                                     minted.push(action_deser[0].data);
+                                }
+                                else if (is_unbox && action[1].act.account === 'atomicassets' && action[1].act.name == 'logtransfer' && action[1].receiver == 'atomicassets'){
+                                    const action_deser = await eos_api.deserializeActions([action[1].act]);
+                                    // console.log(action_deser[0].data);
+                                    for (let a=0; a<action_deser[0].data.asset_ids.length; a++){
+                                        const asset_id = action_deser[0].data.asset_ids[a];
+                                        const asset = await atomic.getAsset(asset_id);
+                                        // console.log(asset);
+                                        asset.new_asset_owner = asset.owner;
+                                        minted.push(asset);
+                                    }
+                                    // minted.push(action_deser[0].data);
                                 }
                                 break;
                         }
