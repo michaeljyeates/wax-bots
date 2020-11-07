@@ -2,11 +2,11 @@ const StateReceiver = require('@eosdacio/eosio-statereceiver');
 const {Api, JsonRpc, Serialize} = require('eosjs');
 const Int64 = require('int64-buffer').Int64BE;
 const fetch = require('node-fetch');
-const { RpcApi } = require('atomicassets');
+const { ExplorerApi } = require('atomicassets');
 
 const telegram_api_key = require('./secret').telegram_api_key;
-const telegram_channel = 'packrips';
-// const telegram_channel = 'gqjfgtyu';
+// const telegram_channel = 'packrips';
+const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
 const pack_images = {
@@ -14,36 +14,28 @@ const pack_images = {
     titanpack: 'https://cloudflare-ipfs.com/ipfs/QmS6U7d269tQqV3HRGhbm4YFiKFCbn6FyLAYUZ2otFQEDi/pack30.png'
 }
 
+const unbox_contracts = ['blockunboxer'];
+
 const atomicassets_account = 'atomicassets';
+const atomic_endpoint = 'https://wax.api.atomicassets.io';
 const endpoint = 'https://wax.eosdac.io';
-const atomic = new RpcApi(endpoint, atomicassets_account, { fetch, rateLimit: 4 });
+const atomic = new ExplorerApi(atomic_endpoint, atomicassets_account, { fetch, rateLimit: 4 });
 const eos_rpc = new JsonRpc(endpoint, {fetch});
+const eos_api = new Api({ rpc: eos_rpc, signatureProvider:null, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
 
-const siren_light = "🚨";
-const smiling = "😄";
-const joy = "👌🏽";
-const unhappy = "😣";
 
-class DeltaHandler {
+
+class TraceHandler {
     constructor({config}) {
         this.config = config;
-
-        const rpc = new JsonRpc(this.config.eos.endpoint, {fetch});
-        this.api = new Api({
-            rpc,
-            signatureProvider: null,
-            chainId: this.config.chainId,
-            textDecoder: new TextDecoder(),
-            textEncoder: new TextEncoder(),
-        });
     }
 
     async sendMessage(msg, channel){
-        console.log('Sending telegram message', msg);
+        // console.log('Sending telegram message', msg);
         const url = `https://api.telegram.org/bot${telegram_api_key}/sendMessage`;
         const msg_obj = {
             chat_id: `@${channel}`,
-            text: msg.replace(/\!/g, '\\!').replace(/\./g, '\\.').replace(/\-/g, '\\-'), //.replace(/\(/g, '\\(').replace(/\)/g, '\\)'),
+            text: msg, //.replace(/\(/g, '\\(').replace(/\)/g, '\\)'),
             parse_mode: 'MarkdownV2'
         }
         // console.log(JSON.stringify(msg_obj));
@@ -56,227 +48,138 @@ class DeltaHandler {
             body: JSON.stringify(msg_obj)
         });
         const resp_json = await res.json()
-        console.log(resp_json);
+        // console.log(resp_json);
+        if (!resp_json.ok && resp_json.error_code === 429 && resp_json.parameters.retry_after){
+            console.log(`Flooding, try again after ${resp_json.parameters.retry_after}s`)
+            setTimeout(() => {
+                this.sendMessage(msg, channel);
+            }, (resp_json.parameters.retry_after + 1) * 1000);
+        }
+
         return resp_json
     }
 
-    async getTableType(code, table) {
-        const contract = await this.api.getContract(code);
-        const abi = await this.api.getAbi(code);
-
-        // this.logger.info(abi)
-
-        let this_table, type;
-        for (let t of abi.tables) {
-            if (t.name === table) {
-                this_table = t;
-                break
+    normaliseTemplateData(td){
+        const data = {};
+        td.forEach(d => {
+            const val_raw = d.value[1];
+            if (d.value[0].substr(0, 4) == 'uint'){
+                data[d.key] = parseInt(d.value[1]);
             }
-        }
-
-        if (this_table) {
-            type = this_table.type
-        } else {
-            this.logger.error(`Could not find table "${table}" in the abi`, {code, table});
-            return
-        }
-
-        return contract.types.get(type)
+            else {
+                data[d.key] = d.value[1];
+            }
+        });
+        return data;
     }
 
-    async getString(obj) {
+    getString(minted){
         let str = '';
-        // console.log('getString', obj);
+        const items = [];
+        minted.forEach(m => {
+            const card_data = this.normaliseTemplateData(m.immutable_template_data);
+            const market_url = 'https://wax.atomichub.io';
+            const market_link = `[${m.asset_id}](${market_url}/explorer/asset/${m.asset_id})`;
+            let desc = '';
 
-        const has_genesis = obj.cards.find(c => c.rarity === 'genesis');
-        if (has_genesis){
-            str += siren_light.repeat(10) + `\n`;
-        }
+            const emoji = {
+                Common: '🍪',
+                Rare: '🧿',
+                Epic: '🔮',
+                Legendary: '⭐️',
+                Mythical: '🔥💎',
+                XDimension: '🛸'
+            }
 
-        let pack_name = obj.boxtype;
-        if (typeof pack_images[obj.boxtype] === 'string'){
-            pack_name = `[${obj.boxtype}](${pack_images[obj.boxtype]})`;
-        }
-        str += ` ${obj.account} opened an ${pack_name} containing:`;
+            if (typeof emoji[card_data.shine] !== 'undefined'){
+                desc += `${emoji[card_data.shine]} `;
+            }
+            else if (typeof emoji[card_data.rarity] !== 'undefined'){
+                desc += `${emoji[card_data.rarity]} `;
+            }
+            desc += card_data.name + ' ';
+            if (card_data.rarity){
+                desc += card_data.rarity + ' ';
+            }
 
-        const card_strings = [];
-        obj.cards.forEach((card_data) => {
-            const market_link = `[${card_data.id}](https://heroes.market/asset/${card_data.id}?referral=mryeateshere)`;
-            const card_str = `${card_data.name} - ${card_data.rarity} ${market_link}`;
-
-            card_strings.push(card_str);
+            items.push(`${desc}- ${market_link}`);
         });
+        str += items.join(`\n`);
 
-        str += `\n\n` + card_strings.join(`\n`);
-
-        str += `\n\n[View opened pack counts](https://heroes.atomichub.io/tools/overview/bcheroes)`
+        str += `\n`;
 
         return str;
     }
 
-    async processDelta(block_num, deltas, abi, block_timestamp) {
-        let have_unboxing = false;
-        const unboxings = {}, assets = {};
+    escapeTelegram(str){
+        return str.replace(/\!/g, '\\!').replace(/\./g, '\\.').replace(/\-/g, '\\-').replace(/\#/g, '\\#');
+    }
 
-        for (const delta of deltas) {
-            // this.logger.info(delta)
-            switch (delta[0]) {
-                case 'table_delta_v0':
-                    if (delta[1].name === 'contract_row') {
-                        // continue
-                        for (const row of delta[1].rows) {
+    async processMessage(minted, pack_data){
+        const opener = minted[0].new_asset_owner;
+        console.log(pack_data);
 
-                            const sb = new Serialize.SerialBuffer({
-                                textEncoder: new TextEncoder,
-                                textDecoder: new TextDecoder,
-                                array: row.data
-                            });
+        const pack_name_str = this.escapeTelegram(`[${pack_data.name}](${pack_data.img})`);
+        let str = `${this.escapeTelegram(opener)} opened a ${pack_name_str} pack containing:\n\n`;
+        str += this.escapeTelegram(this.getString(minted));
 
+        // console.log(str);
 
-                            let code;
-                            try {
-                                // this.logger.info(`row`, row);
-                                sb.get(); // ?
-                                code = sb.getName();
-                                // console.log(code);
+        this.sendMessage(str, telegram_channel);
+    }
 
-                                if (code === 'unbox.heroes'){
+    async queueTrace(block_num, traces, block_timestamp) {
+        let is_unbox, minted, pack_data;
 
-                                    const scope = sb.getName();
-                                    const table = sb.getName();
-                                    const primary_key = new Int64(sb.getUint8Array(8)).toString();
-                                    const payer = sb.getName();
-                                    const data_raw = sb.getBytes();
-
-
-                                    if (table === 'pending.a' && row.present){
-                                        console.log(`Found unbox for ${scope}`);
-                                        // console.info(`Found ${code} delta on table ${table}`);
-
-                                        const table_type = await this.getTableType(code, table);
-                                        const data_sb = new Serialize.SerialBuffer({
-                                            textEncoder: new TextEncoder,
-                                            textDecoder: new TextDecoder,
-                                            array: data_raw
-                                        });
-
-                                        const data = table_type.deserialize(data_sb);
-
-                                        if (data.done){
-                                            // console.log(data);
-                                            have_unboxing = true;
-                                            if (typeof unboxings[data.unboxingid] === 'undefined'){
-                                                unboxings[data.unboxingid] = {
-                                                    series: code,
-                                                    account: data.user,
-                                                    unboxingid: data.unboxingid,
-                                                    cardids: [data.cardid],
-                                                    cards: [],
-                                                    timestamp: block_timestamp
-                                                }
-                                            }
-                                            else {
-                                                unboxings[data.unboxingid].cardids.push(data.cardid);
-                                            }
-                                        }
-                                    }
+        for (const trace of traces) {
+            switch (trace[0]) {
+                case 'transaction_trace_v0':
+                    const trx = trace[1];
+                    is_unbox = false;
+                    minted = [];
+                    pack_data = null
+                    // console.log(trx)
+                    for (let action of trx.action_traces) {
+                        //console.log(action)
+                        switch (action[0]) {
+                            case 'action_trace_v0':
+                                if (unbox_contracts.includes(action[1].act.account) && action[1].act.name == 'claimunboxed'){
+                                    const action_deser = await eos_api.deserializeActions([action[1].act]);
+                                    pack_data = await atomic.getAsset(action_deser[0].data.pack_asset_id);
+                                    is_unbox = true;
                                 }
-                                else if (code === 'atomicassets') {
-                                    const scope = sb.getName();
-                                    const table = sb.getName();
-                                    const primary_key = new Int64(sb.getUint8Array(8)).toString();
-                                    const payer = sb.getName();
-                                    const data_raw = sb.getBytes();
-
-                                    // console.log(scope);
-                                    // console.log(table);
-
-                                    if (table === 'assets' && row.present) {
-                                        // console.log(`Found unbox asset for ${scope}`);
-
-                                        const table_type = await this.getTableType(code, table);
-                                        const data_sb = new Serialize.SerialBuffer({
-                                            textEncoder: new TextEncoder,
-                                            textDecoder: new TextDecoder,
-                                            array: data_raw
-                                        });
-
-                                        const data = table_type.deserialize(data_sb);
-                                        // console.log(`card data `, data);
-
-                                        if (data.collection_name === 'officialhero'){
-                                            if (typeof assets[scope] === 'undefined'){
-                                                assets[scope] = [];
-                                            }
-                                            // const card_data = JSON.parse(data.mdata);
-                                            const card_data = {};
-                                            card_data.id = data.asset_id;
-                                            card_data.schema_name = data.schema_name;
-                                            card_data.template_id = data.template_id;
-
-                                            assets[scope].push(card_data);
-                                        }
-
-                                    }
+                                else if (is_unbox && action[1].act.account === 'atomicassets' && action[1].act.name == 'logmint' && action[1].receiver == 'atomicassets'){
+                                    const action_deser = await eos_api.deserializeActions([action[1].act]);
+                                    minted.push(action_deser[0].data);
                                 }
-                            } catch (e) {
-                                console.error(`Error processing row.data for ${block_num} : ${e.message}`, e);
-                            }
+                                break;
                         }
                     }
-                    break
-            }
-        }
 
-        if (have_unboxing){
-            // console.log(`Processed unboxing`, unboxings);
-            // merge the simple assets data
-            for (let ubid in unboxings){
-                if (typeof assets[unboxings[ubid].account] !== 'undefined'){
-
-                    // console.log('unboxing ', unboxings[ubid], 'assets ', assets[unboxings[ubid].account], ' len ', assets[unboxings[ubid].account].length);
-
-
-                    for (let a=0; a<assets[unboxings[ubid].account].length; a++){
-                        const asset = await atomic.getAsset(unboxings[ubid].account, assets[unboxings[ubid].account][a].id);
-                        const card_obj = await asset.toObject();
-                        const card_data = card_obj.data;
-                        card_data.id = assets[unboxings[ubid].account][a].id;
-                        card_data.cardid = parseInt(card_data.cardid);
-                        unboxings[ubid].cards.push(card_data);
+                    if (is_unbox){
+                        console.log(`is unbox ${pack_data.name}`, minted.length, minted);
+                        this.processMessage(minted, pack_data);
+                        // process.exit(0)
                     }
 
-                }
-                // console.log(unboxings[ubid])
-            }
-
-            for (let ubid in unboxings){
-                // sort the card data
-                let msg = '';
-                unboxings[ubid].cards = unboxings[ubid].cards.sort((a, b) => {
-                    return (a.cardid < b.cardid)?-1:1;
-                });
-                if (typeof unboxings[ubid].boxtype === 'undefined'){
-                    if (unboxings[ubid].cards.length < 10){
-                        unboxings[ubid].boxtype = 'heropack';
-                    }
-                    else if (unboxings[ubid].cards.length > 10){
-                        unboxings[ubid].boxtype = 'titanpack';
-                    }
-                }
-
-                msg = await this.getString(unboxings[ubid]);
-                this.sendMessage(msg, telegram_channel);
+                    break;
             }
         }
     }
+
+    async processTrace(block_num, traces, block_timestamp) {
+        // console.log(`Process block ${block_num}`)
+        return this.queueTrace(block_num, traces, block_timestamp);
+    }
+
 }
+
 
 const start = async (start_block) => {
 
     const config = require('./config');
 
-    const delta_handler = new DeltaHandler({config});
+    const trace_handler = new TraceHandler({config});
 
     sr = new StateReceiver({
         startBlock: start_block,
@@ -284,7 +187,7 @@ const start = async (start_block) => {
         mode: 0,
         config
     });
-    sr.registerDeltaHandler(delta_handler);
+    sr.registerTraceHandler(trace_handler);
     sr.start();
 }
 
