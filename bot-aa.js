@@ -121,7 +121,11 @@ class TraceHandler {
         const opener = minted[0].new_asset_owner;
         // console.log(pack_data);
 
-        const pack_name_str = this.escapeTelegram(`[${pack_data.name}](${ipfs_prefix}${pack_data.data.img})`);
+        let img = ipfs_prefix + pack_data.data.img;
+        if (img.substr(0, 4) === 'http'){
+            img = pack_data.data.img;
+        }
+        const pack_name_str = this.escapeTelegram(`[${pack_data.name}](${img})`);
         let str = `${this.escapeTelegram(opener)} opened a ${pack_name_str} pack containing:\n\n`;
         str += this.escapeTelegram(this.getString(minted));
 
