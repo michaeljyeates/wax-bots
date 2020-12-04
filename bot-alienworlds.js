@@ -140,9 +140,9 @@ class TraceHandler {
             }
 
             if (m.schema && m.schema.schema_name === 'land.worlds'){
-                desc += `${emoji['land']} `;
+                desc += `${emoji['land']}`;
             }
-            else if (typeof emoji[card_data.shine] !== 'undefined'){
+            if (typeof emoji[card_data.shine] !== 'undefined'){
                 desc += `${emoji[card_data.shine]} `;
             }
             else if (typeof emoji[card_data.rarity] !== 'undefined'){
