@@ -2,15 +2,19 @@ const StateReceiver = require('@eosdacio/eosio-statereceiver');
 const {Api, JsonRpc, Serialize} = require('eosjs');
 const Int64 = require('int64-buffer').Int64BE;
 const fetch = require('node-fetch');
+const { ExplorerApi } = require('atomicassets');
 
 const telegram_api_key = require('./secret').telegram_api_key;
 const telegram_channel = 'packrips';
 // const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
+const atomicassets_account = 'atomicassets';
+const atomic_endpoint = 'https://wax.api.atomicassets.io';
 const endpoint = 'https://wax.eosdac.io';
 const eos_rpc = new JsonRpc(endpoint, {fetch});
 const eos_api = new Api({ rpc: eos_rpc, signatureProvider:null, textDecoder: new TextDecoder(), textEncoder: new TextEncoder() });
+const atomic = new ExplorerApi(atomic_endpoint, atomicassets_account, { fetch, rateLimit: 4 });
 
 const lookup = {
     base: {
@@ -42,7 +46,7 @@ const lookup = {
         name: 'Legendary Launch Pack'
     },
     land: {
-        img: 'https://cloudflare-ipfs.com/ipfs/QmT1GmQMif6zugCdRDKYsLpvXe249aiFsZLuFWqTpvacEN',
+        img: 'https://cloudflare-ipfs.com/ipfs/QmSpntMJhgeaWmapmYYEsAymyZL2ZTHErZniMtausTTx9X',
         code: 'pack.worlds',
         account: 'open.worlds',
         symbol: 'LAND',
@@ -116,7 +120,11 @@ class TraceHandler {
         let str = '';
         const items = [];
         minted.forEach(m => {
-            const card_data = this.normaliseTemplateData(m.immutable_template_data);
+            let card_data = m.data;
+            if (!m.data){
+                card_data = this.normaliseTemplateData(m.immutable_template_data);
+            }
+
             const market_url = 'https://wax.atomichub.io';
             const market_link = `[${m.asset_id}](${market_url}/explorer/asset/${m.asset_id})`;
             let desc = '';
@@ -127,10 +135,14 @@ class TraceHandler {
                 Epic: '🔮',
                 Legendary: '⭐️',
                 Mythical: '🔥💎',
-                XDimension: '🛸'
+                XDimension: '🛸',
+                land: '🏝'
             }
 
-            if (typeof emoji[card_data.shine] !== 'undefined'){
+            if (m.schema && m.schema.schema_name === 'land.worlds'){
+                desc += `${emoji['land']} `;
+            }
+            else if (typeof emoji[card_data.shine] !== 'undefined'){
                 desc += `${emoji[card_data.shine]} `;
             }
             else if (typeof emoji[card_data.rarity] !== 'undefined'){
@@ -190,6 +202,14 @@ class TraceHandler {
                                 else if (is_unbox && action[1].act.account === 'atomicassets' && action[1].act.name == 'logmint' && action[1].receiver == 'atomicassets'){
                                     const action_deser = await eos_api.deserializeActions([action[1].act]);
                                     minted.push(action_deser[0].data);
+                                }
+                                else if (is_unbox && action[1].act.account === 'atomicassets' && action[1].act.name == 'logtransfer' && action[1].receiver == 'atomicassets'){
+                                    const action_deser = await eos_api.deserializeActions([action[1].act]);
+                                    const asset_id = action_deser[0].data.asset_ids[0];
+                                    const asset = await atomic.getAsset(asset_id);
+                                    // console.log(`transfer!!!`, asset);
+                                    // process.exit(0)
+                                    minted.push(asset);
                                 }
                                 break;
                         }
