@@ -87,6 +87,17 @@ class TraceHandler {
             const market_link = `[${m.assetid}](${market_url}/sale/${m.assetid})`;
             let desc = '';
 
+            const emoji = {
+                'Common': '🥜',
+                'Simple Re-Fracture': '🌀',
+                'Black Death Re-Fracture': '☠️',
+                'Nuclear Re-Fracture': '🧪',
+                'Twerp-O-Mation': '💎'
+            };
+
+            if (typeof emoji[card_data_i.Rarity] !== 'undefined'){
+                desc += `${emoji[card_data_i.Rarity]} `;
+            }
             desc += card_data_i.name + ' ';
             if (card_data_i.cardnumber){
                 desc += card_data_i.cardnumber;
