@@ -101,8 +101,8 @@ class TraceHandler {
                     legendary: '💉',
                     'ultra rare': '💀',
                     mythic: '💎',
-                    guest: '👺',
-                    artist: '🎨',
+                    special: '👺',
+                    secret: '🎨',
                     insert: '✅'
                 }
             }
