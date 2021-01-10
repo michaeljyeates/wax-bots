@@ -103,7 +103,7 @@ class TraceHandler {
                     mythic: '💎',
                     guest: '👺',
                     artist: '🎨',
-                    set: '✅'
+                    insert: '✅'
                 }
             }
             const default_emoji = {
