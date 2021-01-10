@@ -139,6 +139,9 @@ class TraceHandler {
             else if (card_data.Rarity){
                 desc += card_data.Rarity + ' ';
             }
+            if (card_data.Variation){
+                desc += ' (' + card_data.Variation + ')';
+            }
 
             items.push(`${desc}- ${market_link}`);
         });
