@@ -115,11 +115,11 @@ class TraceHandler {
             }
 
             const collection = m.collection.collection_name.toLowerCase();
-            let rarity = card_data.Rarity.toLowerCase();
-            if (!rarity){
-                rarity = card_data.rarity.toLowerCase();
+            let rarity = '';
+            if (card_data.Rarity){
+                card_data.Rarity.toLowerCase();
             }
-            if (!rarity){
+            if (!rarity && card_data.rarity){
                 rarity = card_data.rarity.toLowerCase();
             }
 
