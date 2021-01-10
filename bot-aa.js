@@ -101,7 +101,9 @@ class TraceHandler {
                     legendary: '💉',
                     'ultra rare': '💀',
                     mythic: '💎',
-                    secret: '👺'
+                    guest: '👺',
+                    artist: '🎨',
+                    set: '✅'
                 }
             }
             const default_emoji = {
