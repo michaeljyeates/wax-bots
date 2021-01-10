@@ -84,24 +84,58 @@ class TraceHandler {
             let desc = '';
 
             const emoji = {
-                Common: '🍪',
-                Rare: '🧿',
-                Epic: '🔮',
-                Legendary: '⭐️',
-                Mythical: '🔥💎',
-                Mythic: '🔥💎',
-                XDimension: '🛸'
+                'monsters.r2': {
+                    common: '🧢',
+                    uncommon: '🔊',
+                    rare: '⚡',
+                    epic: '🧟',
+                    legendary: '🌕',
+                    mythic: '✌️🏽'
+                },
+                ultrahorrors: {
+                    base: '🖤',
+                    uncommon: '🧬',
+                    limited: '👓',
+                    rare: '🌀',
+                    epic: '✨',
+                    legendary: '💉',
+                    'ultra rare': '💀',
+                    mythic: '💎',
+                    secret: '👺'
+                }
+            }
+            const default_emoji = {
+                common: '🍪',
+                uncommon: '🧿',
+                rare: '🧿',
+                epic: '🔮',
+                legendary: '⭐️',
+                mythical: '🔥💎',
+                mythic: '🔥💎'
             }
 
-            if (typeof emoji[card_data.shine] !== 'undefined'){
-                desc += `${emoji[card_data.shine]} `;
+            const collection = m.collection.collection_name.toLowerCase();
+            let rarity = card_data.Rarity.toLowerCase();
+            if (!rarity){
+                rarity = card_data.rarity.toLowerCase();
             }
-            else if (typeof emoji[card_data.rarity] !== 'undefined'){
-                desc += `${emoji[card_data.rarity]} `;
+            if (!rarity){
+                rarity = card_data.rarity.toLowerCase();
             }
+
+            if (typeof emoji[collection][rarity] !== 'undefined'){
+                desc += `${emoji[collection][rarity]} `;
+            }
+            else if (typeof default_emoji[rarity] !== 'undefined'){
+                desc += `${default_emoji[rarity]} `;
+            }
+
             desc += card_data.name + ' ';
             if (card_data.rarity){
                 desc += card_data.rarity + ' ';
+            }
+            else if (card_data.Rarity){
+                desc += card_data.Rarity + ' ';
             }
 
             items.push(`${desc}- ${market_link}`);
