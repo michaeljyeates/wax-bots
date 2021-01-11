@@ -131,8 +131,8 @@ class TraceHandler {
         this.sendMessage(msg, telegram_channel);
 
         for (let a = 0; a < assets.length; a++){
-            // console.log(assets[a]);
-            if (assets[a].template_mint === '1'){
+            console.log(assets[a]);
+            if (assets[a].template_mint === '1' && assets[a].collection && assets[a].collection.collection_name !== 'kogsofficial'){
                 this.sendMessage(msg, first_telegram_channel);
             }
         }
