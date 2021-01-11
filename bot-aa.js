@@ -149,7 +149,7 @@ class TraceHandler {
                 desc += ' (' + card_data.Variation + ')';
             }
 
-            items.push(`${this.escapeTelegram(desc)}- ${market_link}`);
+            items.push(`${this.escapeTelegram(desc + ' - ')} ${market_link}`);
         });
         str += items.join(`\n`);
 
