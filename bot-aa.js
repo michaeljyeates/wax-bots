@@ -174,11 +174,12 @@ class TraceHandler {
         // console.log(pack_data);
 
         let img = ipfs_prefix + pack_data.data.img;
-        if (img.substr(0, 4) === 'http'){
+        if (pack_data.data.img.substr(0, 4) === 'http'){
             img = pack_data.data.img;
         }
         const pack_name_str = `[${this.escapeTelegram(pack_data.name)}](${img})`;
         let str = `${this.escapeTelegram(opener)} opened a ${pack_name_str} pack containing:\n\n`;
+        // console.log(str);
         str += this.getString(minted);
 
         // console.log(str);
