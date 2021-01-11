@@ -45,10 +45,13 @@ class TraceHandler {
         const resp_json = await res.json()
         // console.log(resp_json);
         if (!resp_json.ok && resp_json.error_code === 429 && resp_json.parameters.retry_after){
-            console.log(`Flooding, try again after ${resp_json.parameters.retry_after}s`)
+            console.error(`Flooding, try again after ${resp_json.parameters.retry_after}s`)
             setTimeout(() => {
                 this.sendMessage(msg, channel);
             }, (resp_json.parameters.retry_after + 1) * 1000);
+        }
+        else if (!resp_json.ok){
+            console.error(resp_json);
         }
 
         return resp_json
