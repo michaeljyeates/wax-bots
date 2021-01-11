@@ -149,7 +149,7 @@ class TraceHandler {
                 desc += ' (' + card_data.Variation + ')';
             }
 
-            items.push(`${desc}- ${market_link}`);
+            items.push(`${this.escapeTelegram(desc)}- ${market_link}`);
         });
         str += items.join(`\n`);
 
@@ -177,9 +177,9 @@ class TraceHandler {
         if (img.substr(0, 4) === 'http'){
             img = pack_data.data.img;
         }
-        const pack_name_str = this.escapeTelegram(`[${pack_data.name}](${img})`);
+        const pack_name_str = `[${this.escapeTelegram(pack_data.name)}](${img})`;
         let str = `${this.escapeTelegram(opener)} opened a ${pack_name_str} pack containing:\n\n`;
-        str += this.escapeTelegram(this.getString(minted));
+        str += this.getString(minted);
 
         // console.log(str);
 
