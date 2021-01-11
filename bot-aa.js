@@ -116,7 +116,10 @@ class TraceHandler {
                 mythic: '🔥💎'
             }
 
-            const collection = m.collection.collection_name.toLowerCase();
+            let collection = '';
+            if (m.collection){
+                collection = m.collection.collection_name.toLowerCase();
+            }
             let rarity = '';
             if (card_data.Rarity){
                 rarity = card_data.Rarity.toLowerCase();
