@@ -128,7 +128,7 @@ class TraceHandler {
                 rarity = card_data.rarity.toLowerCase();
             }
 
-            if (typeof emoji[collection][rarity] !== 'undefined'){
+            if (typeof emoji[collection] !== 'undefined' && typeof emoji[collection][rarity] !== 'undefined'){
                 desc += `${emoji[collection][rarity]} `;
             }
             else if (typeof default_emoji[rarity] !== 'undefined'){
