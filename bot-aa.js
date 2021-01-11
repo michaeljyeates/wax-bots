@@ -159,7 +159,14 @@ class TraceHandler {
     }
 
     escapeTelegram(str){
-        return str.replace(/\!/g, '\\!').replace(/\./g, '\\.').replace(/\-/g, '\\-').replace(/\#/g, '\\#').replace(/\*/g, '\\*').replace(/\_/g, '\\_');
+        return str.replace(/\!/g, '\\!')
+            .replace(/\./g, '\\.')
+            .replace(/\-/g, '\\-')
+            .replace(/\#/g, '\\#')
+            .replace(/\*/g, '\\*')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)')
+            .replace(/\_/g, '\\_');
     }
 
     async processMessage(minted, pack_data){
