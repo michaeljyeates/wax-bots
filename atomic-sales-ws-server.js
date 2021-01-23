@@ -143,7 +143,7 @@ class WSSender {
         client.connection.sendUTF(JSON.stringify({type:'sale', data:{buyer, seller, quantity, asset}}));
     }
 
-    async sale (buyer, seller, quantity, asset) {
+    async sale (protocol, buyer, seller, quantity, asset, block_num, block_timestamp) {
         console.log('SALE! Sending to ws', buyer, seller, quantity, asset);
 
         if (!asset.collection){
