@@ -147,14 +147,18 @@ class WSSender {
         console.log('SALE! Sending to ws', buyer, seller, quantity, asset);
 
         if (!asset.collection){
+            console.log(`Could not find collection`);
             return;
         }
 
         const collection = asset.collection.collection_name;
+        console.log(`Sale has collection ${collection}`);
         if (typeof this.clients[collection] !== 'undefined'){
+            console.log(`Sending to ${this.clients[collection].length} specific clients`);
             this.clients[collection].forEach((c) => {this.send_sale(c, buyer, seller, quantity, asset)});
         }
         if (typeof this.clients['*'] !== 'undefined'){
+            console.log(`Sending to ${this.clients['*'].length} general clients`);
             this.clients['*'].forEach((c) => {this.send_sale(c, buyer, seller, quantity, asset)});
         }
     }
