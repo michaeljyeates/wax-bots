@@ -256,7 +256,7 @@ class TelegramSender {
 
     async sale (market, buyer, seller, quantity, asset) {
 
-        console.log(asset);
+        // console.log(asset);
 
         let data = asset;
         if (market === 'atomic'){

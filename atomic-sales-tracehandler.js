@@ -18,6 +18,10 @@ class TraceHandler {
         const url = `${this.config.atomic_endpoint}/atomicassets/v1/assets?owner=${owner}&ids=${asset_id}&page=1&limit=1`;
         const res = await fetch(url);
         const json = await res.json();
+        if (!json.data){
+            console.error(`Failed to get data for ${asset_id}`, json);
+            return;
+        }
         // console.log(json);
         return json.data[0];
     }
@@ -43,44 +47,44 @@ class TraceHandler {
 
 
 
-    async process_atomic(buyer, seller, quantity, asset_id, retries = 0) {
+    async process_atomic(buyer, seller, quantity, asset_id, block_num, block_timestamp, retries = 0) {
         if (retries >= 10){
             console.log(`Giving up on ${asset_id}`);
             return;
         }
-        console.log(`${buyer} paid ${quantity} to ${seller} for ${asset_id}`);
+        // console.log(`${buyer} paid ${quantity} to ${seller} for ${asset_id}`);
         const asset = await this.get_atomic_data(buyer, asset_id);
         // console.log(asset);
         if (!asset){
             retries++;
             // console.log(`Couldnt get asset data`);
             setTimeout(() => {
-                this.process_atomic(buyer, seller, quantity, asset_id, retries);
+                this.process_atomic(buyer, seller, quantity, asset_id, block_num, block_timestamp, retries);
             }, 3000);
             return;
         }
 
         this.notify.forEach((n) => {
-            n.sale('atomic', buyer, seller, quantity, asset);
+            n.sale('atomic', buyer, seller, quantity, asset, block_num, block_timestamp);
         });
 
     }
 
-    async process_myth(asset){
-        console.log(asset);
+    async process_myth(asset, block_num, block_timestamp){
+        // console.log(asset);
         const asset_data = JSON.parse(asset.mdata);
         asset_data.asset_id = asset.assetid;
         asset_data.category = asset.category;
         asset_data.author = asset.author;
 
-        console.log(`${asset.buyer} paid ${asset.price} to ${asset.seller} for ${asset.assetid}`);
+        // console.log(`${asset.buyer} paid ${asset.price} to ${asset.seller} for ${asset.assetid}`);
 
         this.notify.forEach((n) => {
-            n.sale('myth', asset.buyer, asset.seller, asset.price, asset_data);
+            n.sale('myth', asset.buyer, asset.seller, asset.price, asset_data, block_num, block_timestamp);
         });
     }
 
-    async process_simple(data){
+    async process_simple(data, block_num, block_timestamp){
         // console.log(data);
         const buyer = data.from;
         const sale_data = JSON.parse(data.assets_seller);
@@ -96,20 +100,20 @@ class TraceHandler {
                     continue;
                 }
                 const asset_data = asset.data;
-                console.log(`${buyer} paid ${quantity} to ${seller} for ${asset.id}`);
+                // console.log(`${buyer} paid ${quantity} to ${seller} for ${asset.id}`);
 
                 asset_data.asset_id = asset_id;
                 asset_data.category = asset.category;
                 asset_data.author = asset.author;
 
                 this.notify.forEach((n) => {
-                    n.sale('simple', buyer, seller, quantity, asset_data);
+                    n.sale('simple', buyer, seller, quantity, asset_data, block_num, block_timestamp);
                 });
             }
         }
     }
 
-    async process_waxstash(data){
+    async process_waxstash(data, block_num, block_timestamp){
         const asset = await this.get_simple_data(data.buyer, data.asset_id);
         const asset_data = asset.data;
         console.log(`${data.buyer} paid ${data.quantity} to ${data.seller} for ${data.asset_id}`);
@@ -119,13 +123,13 @@ class TraceHandler {
         asset_data.author = asset.author;
 
         this.notify.forEach((n) => {
-            n.sale('waxstash', data.buyer, data.seller, data.quantity, asset_data);
+            n.sale('waxstash', data.buyer, data.seller, data.quantity, asset_data, block_num, block_timestamp);
         });
     }
 
     async queueTrace(block_num, traces, block_timestamp) {
 
-        const atomic_sale_traces = [], myth_sale_traces = [], collectables_sale_traces = [], simple_sale_traces = [], waxstash_sale_traces = [];
+        const atomic_sale_traces = [], atomic_drop_traces = [], myth_sale_traces = [], collectables_sale_traces = [], simple_sale_traces = [], waxstash_sale_traces = [];
 
         for (const trace of traces) {
             switch (trace[0]) {
@@ -138,6 +142,10 @@ class TraceHandler {
                             case 'action_trace_v0':
                                 if (action[1].act.account === 'atomicmarket' && action[1].act.name === 'purchasesale'){
                                     atomic_sale_traces.push(trx);
+                                    continue;
+                                }
+                                else if (action[1].act.account === 'atomicdropsx' && action[1].act.name === 'assertdrop'){
+                                    atomic_drop_traces.push(trx);
                                     continue;
                                 }
                                 else if (action[1].act.account === 'market.myth' && action[1].act.name === 'logsale' && action[1].receiver === 'market.myth'){
@@ -226,7 +234,7 @@ class TraceHandler {
                         }
                     }
 
-                    await this.process_atomic(buyer, seller, quantity, asset_id);
+                    await this.process_atomic(buyer, seller, quantity, asset_id, block_num, block_timestamp);
                 }
                 else {
                     console.error(`First action wasnt transfer in ${st.id}`);
@@ -236,11 +244,41 @@ class TraceHandler {
             // process.exit(0)
         }
 
+        if (atomic_drop_traces.length){
+            let quantity, asset_id, buyer, seller;
+            for (let d = 0; d < atomic_drop_traces.length; d++){
+                const dt = atomic_drop_traces[d];
+                // console.log(dt);
+
+                for (let a = 0; a < dt.action_traces.length; a++){
+                    const act = dt.action_traces[a];
+                    // console.log('drop action', act[1].act);
+                    if (act[1].act.name === 'assertdrop' && act[1].act.account === 'atomicdropsx'){
+                        const deser_acts = await this.eos_api.deserializeActions([act[1].act]);
+                        // console.log('assertdrop action', deser_acts[0]);
+                        quantity = deser_acts[0].data.listing_price_to_assert;
+                        if (quantity === '0 NULL'){
+                            quantity = 'FREE';
+                        }
+                    }
+                    else if (act[1].act.name === 'logmint' && act[1].act.account === 'atomicassets'){
+                        const deser_acts = await this.eos_api.deserializeActions([act[1].act]);
+                        asset_id = deser_acts[0].data.asset_id;
+                        buyer = deser_acts[0].data.new_asset_owner;
+                        seller = deser_acts[0].data.collection_name;
+                    }
+                }
+            }
+            // process.exit(0)
+
+            await this.process_atomic(buyer, seller, quantity, asset_id, block_num, block_timestamp);
+        }
+
         if (myth_sale_traces.length){
             myth_sale_traces.forEach(ms => {
                 const act = this.eos_api.deserializeActions([ms]).then(act => {
-                    console.log(act[0]);
-                    this.process_myth(act[0].data);
+                    // console.log(act[0]);
+                    this.process_myth(act[0].data, block_num, block_timestamp);
                 });
             });
         }
@@ -248,8 +286,8 @@ class TraceHandler {
         if (simple_sale_traces.length){
             simple_sale_traces.forEach(ms => {
                 const act = this.eos_api.deserializeActions([ms]).then(act => {
-                    console.log(act[0].data);
-                    this.process_simple(act[0].data);
+                    // console.log(act[0].data);
+                    this.process_simple(act[0].data, block_num, block_timestamp);
                 });
             });
         }
@@ -283,7 +321,7 @@ class TraceHandler {
                 });
 
                 if (seller && buyer && asset_id && quantity){
-                    this.process_waxstash({ seller, buyer, asset_id, quantity });
+                    this.process_waxstash({ seller, buyer, asset_id, quantity }, block_num, block_timestamp);
                 }
             });
         }
