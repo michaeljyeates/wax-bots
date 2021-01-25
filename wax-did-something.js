@@ -47,7 +47,8 @@ const wax_accounts = [
     'orderorderor',
     'waxe',
     '.enai.waa',
-    'ar2am.wam'
+    'ar2am.wam',
+    'ldrbrd.nft'
 ];
 
 const ignored_actions = [
