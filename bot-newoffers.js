@@ -80,9 +80,9 @@ class TraceHandler {
             else if (asset.original_mint){
                 str += `Mint: ${asset.original_mint}\n`
             }
-
-            str += `\n[Buy on Atomic Hub](https://wax.atomichub.io/market/sale/${sale_data.sale_id})`;
         }
+
+        str += `\n[Buy on Atomic Hub](https://wax.atomichub.io/market/sale/${sale_data.sale_id})`;
 
         return str;
     }
