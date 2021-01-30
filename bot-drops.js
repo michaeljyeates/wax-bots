@@ -194,7 +194,7 @@ class TraceHandler {
 
         // console.log(drop_data.assets_to_mint[0].immutable_data);
         let img = drop_data.assets_to_mint[0].immutable_data.img;
-        if (img.substr(0, 1) === 'Q'){
+        if (img && img.substr(0, 1) === 'Q'){
             img = `https://ipfs.io/ipfs/${img}`;
         }
         const str = this.getString(drop_data);
