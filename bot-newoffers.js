@@ -57,7 +57,7 @@ class TraceHandler {
 
     getString(sale_data){
         const seller = sale_data.seller;
-        let str = `${seller} offered to sell:\n\n`;
+        let str = `${seller} offered to sell:`;
 
         for (let a=0; a < sale_data.assets.length; a++){
             const asset = sale_data.assets[a];
@@ -65,7 +65,7 @@ class TraceHandler {
             if (img.substr(0,1) === 'Q'){
                 img = `https://ipfs.io/ipfs/${img}`
             }
-            str += `Name: [${asset.name}](${img})\n`;
+            str += `\n\nName: [${asset.name}](${img})\n`;
             str += `Price: ${sale_data.listing_price}\n`;
             let mint = '';
             if (asset.template && !asset.original_mint){
