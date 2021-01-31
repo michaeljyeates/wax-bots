@@ -177,6 +177,7 @@ class TraceHandler {
             const date = new Date(drop_data.start_time * 1000);
             str += `<b>Start Time</b>: ${date}`;
         }
+        str += `\n<b>Already Minted</a>: ${drop_data.assets_to_mint[0].issued_supply}`
         str += `\n<a href="https://wax.atomichub.io/drops/${drop_data.drop_id}">Get Drop</a>`
 
         return str;
