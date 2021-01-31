@@ -66,7 +66,6 @@ class TraceHandler {
                 img = `https://ipfs.io/ipfs/${img}`
             }
             str += `\n\nName: [${asset.name}](${img})\n`;
-            str += `Price: ${sale_data.listing_price}\n`;
             let mint = '';
             if (asset.template && !asset.original_mint){
                 let max_supply = asset.template.max_supply;
@@ -82,7 +81,8 @@ class TraceHandler {
             }
         }
 
-        str += `\n[Buy on Atomic Hub](https://wax.atomichub.io/market/sale/${sale_data.sale_id})`;
+        str += `\nPrice: ${sale_data.listing_price}`;
+        str += `\n\n[Buy on Atomic Hub](https://wax.atomichub.io/market/sale/${sale_data.sale_id})`;
 
         return str;
     }
