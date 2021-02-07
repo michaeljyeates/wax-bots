@@ -178,6 +178,7 @@ class TraceHandler {
             str += `<b>Start Time</b>: ${date}`;
         }
         str += `\n<b>Already Minted</b>: ${drop_data.assets_to_mint[0].issued_supply}`
+        str += `\n<b>Drop ID</b>: ${drop_data.drop_id}`
         str += `\n<a href="https://wax.atomichub.io/drops/${drop_data.drop_id}">Get Drop</a>`
 
         return str;
