@@ -130,6 +130,9 @@ class TraceHandler {
             if (!rarity && card_data.rarity){
                 rarity = card_data.rarity.toLowerCase();
             }
+            if (card_data.variant){
+                rarity = card_data.variant;
+            }
 
             if (typeof emoji[collection] !== 'undefined' && typeof emoji[collection][rarity] !== 'undefined'){
                 desc += `${emoji[collection][rarity]} `;
@@ -208,6 +211,12 @@ class TraceHandler {
                                     is_unbox = true;
                                 }
                                 else if (action[1].act.account == 'atomicpoolsx' && action[1].act.name == 'claim'){
+                                    const action_deser = await eos_api.deserializeActions([action[1].act]);
+                                    pack_data = await atomic.getAsset(action_deser[0].data.claim_id);
+                                    // console.log(pack_data);
+                                    is_unbox = true;
+                                }
+                                else if (action[1].act.account == 'gpkpools1111' && action[1].act.name == 'claim'){
                                     const action_deser = await eos_api.deserializeActions([action[1].act]);
                                     pack_data = await atomic.getAsset(action_deser[0].data.claim_id);
                                     // console.log(pack_data);
