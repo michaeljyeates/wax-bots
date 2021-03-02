@@ -222,6 +222,12 @@ class TraceHandler {
                                     // console.log(pack_data);
                                     is_unbox = true;
                                 }
+                                else if (action[1].act.account == 'heroespoolsx' && action[1].act.name == 'claim'){
+                                    const action_deser = await eos_api.deserializeActions([action[1].act]);
+                                    pack_data = await atomic.getAsset(action_deser[0].data.claim_id);
+                                    // console.log(pack_data);
+                                    is_unbox = true;
+                                }
                                 else if (action[1].act.account == 'tribalbooks' && action[1].act.name == 'unpack'){
                                     const action_deser = await eos_api.deserializeActions([action[1].act]);
                                     pack_data = await atomic.getAsset(action_deser[0].data.asset_id);
