@@ -5,8 +5,8 @@ const fetch = require('node-fetch');
 const { ExplorerApi } = require('atomicassets');
 
 const telegram_api_key = require('./secret').telegram_api_key;
-// const telegram_channel = 'packrips';
-const telegram_channel = 'gqjfgtyu';
+const telegram_channel = 'packrips';
+// const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
 const unbox_contracts = ['atomicpacksx', 'blockunboxer'];
