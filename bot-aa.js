@@ -5,8 +5,8 @@ const fetch = require('node-fetch');
 const { ExplorerApi } = require('atomicassets');
 
 const telegram_api_key = require('./secret').telegram_api_key;
-const telegram_channel = 'packrips';
-// const telegram_channel = 'gqjfgtyu';
+// const telegram_channel = 'packrips';
+const telegram_channel = 'gqjfgtyu';
 const telegram_bot = 'packrips_bot';
 
 const unbox_contracts = ['atomicpacksx', 'blockunboxer'];
@@ -85,6 +85,7 @@ class TraceHandler {
             const market_url = 'https://wax.atomichub.io';
             const market_link = `[${m.asset_id}](${market_url}/explorer/asset/${m.asset_id})`;
             let desc = '';
+            console.log(`CARD DATA`, card_data)
 
             const emoji = {
                 'monsters.r2': {
@@ -142,11 +143,8 @@ class TraceHandler {
             }
 
             desc += card_data.name + ' ';
-            if (card_data.rarity){
-                desc += card_data.rarity + ' ';
-            }
-            else if (card_data.Rarity){
-                desc += card_data.Rarity + ' ';
+            if (rarity){
+                desc += rarity + ' ';
             }
             if (card_data.Variation){
                 desc += ' (' + card_data.Variation + ')';
@@ -219,7 +217,7 @@ class TraceHandler {
                                 else if (action[1].act.account == 'gpkpools1111' && action[1].act.name == 'claim'){
                                     const action_deser = await eos_api.deserializeActions([action[1].act]);
                                     pack_data = await atomic.getAsset(action_deser[0].data.claim_id);
-                                    // console.log(pack_data);
+                                    console.log(pack_data);
                                     is_unbox = true;
                                 }
                                 else if (action[1].act.account == 'heroespoolsx' && action[1].act.name == 'claim'){
