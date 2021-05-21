@@ -56,23 +56,22 @@ const { deserialize, ObjectSchema } = require("atomicassets");
             console.log('Sending telegram message', channel, msg, photo, retries);
             const url = `https://api.telegram.org/bot${this.config.telegram_api_key}/sendPhoto`;
 
-            // download the file and upload to avoid filesize limits
-            // check if we have an extension
-            const last_dot = photo.lastIndexOf('.');
-            let extension = 'unknown';
-            if (last_dot > -1){
-                const test_extension = photo.substr(last_dot + 1);
-                if (test_extension.length < 5){
-                    extension = test_extension;
-                }
-                // console.log(test_extension);
-            }
-
             let res;
 
-
             // save and upload any unknown extensions, or if it failed first time
-            if (retries <= 1){
+            if (retries <= 1 && photo){
+                // download the file and upload to avoid filesize limits
+                // check if we have an extension
+                const last_dot = photo.lastIndexOf('.');
+                let extension = 'unknown';
+                if (last_dot > -1){
+                    const test_extension = photo.substr(last_dot + 1);
+                    if (test_extension.length < 5){
+                        extension = test_extension;
+                    }
+                    // console.log(test_extension);
+                }
+
                 const md5_url = md5(photo);
                 const photo_path = `./photos/${md5_url}`;
                 console.log(`Saving photo ${photo_path}`);
